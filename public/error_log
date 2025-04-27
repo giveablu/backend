@@ -1,0 +1,2 @@
+[03-Jul-2024 14:25:06 UTC] PHP Fatal error:  Cannot use isset() on the result of an expression (you can use "null !== expression" instead) in /home/bpddmepy/public_html/blucharity-app/storage/framework/views/8690bd8bff9d6230d6ee70e3453148b7.php on line 59
+[17-Sep-2024 10:02:35 UTC] PHP Fatal error:  Cannot use App\Mail\ContactUs as ContactUs because the name is already in use in /home/bpddmepy/public_html/blucharity-app/app/Http/Controllers/ContactUsController.php on line 8
