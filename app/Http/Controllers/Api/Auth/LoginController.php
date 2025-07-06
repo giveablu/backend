@@ -20,28 +20,31 @@ class LoginController extends Controller
         ]);
 
         if ($validData->fails()) {
-
             $message = collect([
                 $validData->errors()->first('authvalue'),
                 $validData->errors()->first('password'),
                 $validData->errors()->first('device_token')
             ])->filter(fn ($item, $key) => !empty($item))->values();
 
-
             return response()->json(['response' => false, 'message' => $message]);
         } else {
             $user = User::where('email', $request->authvalue)->first();
 
-            if ($user && $user->email_verified_at) {
+            if ($user) {
                 $inputPassword = trim($request->input('password'));
                 if (!Hash::check($inputPassword, $user->password)) {
-
                     return response()->json([
                         'response' => false,
                         'message' => ['Provided credentials are incorrect']
-                        
                     ]);
                 } else {
+                    // Check if email is verified (but don't block login)
+                    if (!$user->email_verified_at) {
+                        return response()->json([
+                            'response' => false,
+                            'message' => ['Please verify your email address first. Check your email for verification code.']
+                        ]);
+                    }
 
                     if ($user->tokens()->count()) {
                         $user->tokens()->delete();

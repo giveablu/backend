@@ -2,94 +2,63 @@
 
 namespace App\Models;
 
-use App\Models\MailOtp;
-use Illuminate\Support\Str;
-use Laravel\Sanctum\HasApiTokens;
-use App\Observers\NewUserRegister;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
-        'phone',
         'password',
+        'phone',
         'role',
-        'phone_verified_at',
-        'email_verified_at',
-        'device_token',
+        'search_id',
         'photo',
+        'joined_date',
+        'email_verified_at',
+        'phone_verified_at',
+        'device_token',
         'gender',
+        'reset_otp',
+        'reset_otp_expires_at',
+        'reset_token',
+        'reset_token_expires_at',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
+        'reset_otp',
+        'reset_token',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
-        'phone_verified_at' => 'datetime',
         'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
+        'joined_date' => 'datetime',
+        'password' => 'hashed',
+        'reset_otp_expires_at' => 'datetime',
+        'reset_token_expires_at' => 'datetime',
     ];
-
-    public function social()
-    {
-        return $this->hasOne(UserSocial::class);
-    }
-
-    public function post()
-    {
-        return $this->hasOne(Post::class);
-    }
-
-    public function bankDetail()
-    {
-        return $this->hasOne(BankDetail::class);
-    }
-
-    public function withdraws()
-    {
-        return $this->hasMany(Withdraw::class);
-    }
-
-    public function otp()
-    {
-        return $this->hasMany(Otp::class);
-    }
-
-    public function donations(): BelongsToMany
-    {
-        return $this->belongsToMany(Post::class, 'donations', 'user_id', 'post_id');
-    }
-
-    public function deleteds(): BelongsToMany
-    {
-        return $this->belongsToMany(Post::class, 'delete_post', 'user_id', 'post_id');
-    }
-
-    public function mailOtp()
-    {
-        return $this->hasOne(MailOtp::class);
-    }
-
-    protected function email(): Attribute
-    {
-        return Attribute::make(
-            set: fn ($value) => Str::lower($value)
-        );
-    }
-
-    // public static function booted()
-    // {
-    //     static::observe(NewUserRegister::class);
-    // }
 }

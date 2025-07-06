@@ -1,0 +1,1003 @@
+swagger: "2.0"
+info:
+  description: Blu Charity project rest api for mobile app
+  version: 1.0.0
+  title: Blu Charity Mobile API
+basePath: /api
+servers:
+  - url: https://bluecharity.devstories.in
+    description: Server
+
+paths:
+  # Donor Registration
+  /auth/register:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor Registration
+      description: Registere New Donor
+      operationId: donor_register
+      parameters:
+        - in: body
+          name: Registration Request Body
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                required: true
+              email:
+                type: string
+                required: true
+              phone:
+                type: string
+                required: true
+              password:
+                type: string
+                required: true
+              password_confirmation:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Login
+  /auth/sign-in:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor Login
+      description: Registered user login
+      operationId: user_login
+      parameters:
+        - in: body
+          name: Login Request Body
+          schema:
+            type: object
+            properties:
+              authvalue:
+                type: string
+                required: true
+              password:
+                type: string
+                required: true
+        - in: formData
+          name: device_token
+          type: string
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor OTP verification
+  /auth/donor/verify-otp:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor OTP verification
+      description: Registration OTP verification
+      operationId: donor_otp_verification
+      parameters:
+        - in: body
+          name: OTP verification Body
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+                required: true
+              otp:
+                type: string
+                required: true
+        - in: formData
+          name: device_token
+          type: string
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor OTP Resend
+  /auth/donor/resend-otp:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor OTP Resend
+      description: Registration OTP Resend
+      operationId: donor_otp_resend
+      parameters:
+        - in: body
+          name: OTP Resend Body
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Forgot Password
+  /auth/donor/forgot-password:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor Forgot Password
+      description: Registered Donor Forgot Password
+      operationId: donor_password_forgot
+      parameters:
+        - in: body
+          name: Forgot Password Request Body
+          schema:
+            type: object
+            properties:
+              authvalue:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Reset Password
+  /auth/donor/reset-password:
+    post:
+      tags:
+        - Donor Authentication
+      summary: Donor Reset Password
+      description: Donor Password Reset
+      operationId: donor_password_reset
+      parameters:
+        - in: body
+          name: Login Request Body
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+                required: true
+              password:
+                type: string
+                required: true
+              password_confirmation:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Home
+  /donor-account/home:
+    get:
+      tags:
+        - Donor Home
+      summary: Donor Home View
+      description: Retrieving the home of a donor. Authetication Needed.
+      operationId: donor_home_show
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Profile
+  /donor-account/profile:
+    get:
+      tags:
+        - Donor Profile
+      summary: Donor Profile View
+      description: Retrieving the Profile of a donor. Authetication Needed.
+      operationId: donor_profile_show
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Profile Update
+  /donor-account/profile/update:
+    post:
+      tags:
+        - Donor Profile
+      summary: Donor Profile Update
+      description: Updation the profile of a donor. Authetication Needed.
+      operationId: donor_profile_update
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: name
+          type: string
+          required: true
+
+        - in: formData
+          name: email
+          type: string
+          required: true
+
+        - in: formData
+          name: phone
+          type: string
+          required: true
+
+        - in: formData
+          name: photo
+          type: file
+          required: false
+
+        - in: formData
+          name: old_password
+          type: string
+          required: false
+          description: Required if password is not empty
+
+        - in: formData
+          name: password
+          type: string
+          required: false
+          description: Required if old password is not empty
+
+        - in: formData
+          name: password_confirmation
+          type: string
+          required: false
+          description: Required if password is not empty
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Payment
+  /donor-account/payment:
+    post:
+      tags:
+        - Donor Payment
+      summary: Pay to A post by donor
+      description: Payment Process. Authetication Needed.
+      operationId: donor_payment
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: body
+          name: Login Request Body
+          schema:
+            type: object
+            properties:
+              donation_id:
+                type: string
+                required: true
+              tobepaid:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Home
+  /donor-account/donations:
+    get:
+      tags:
+        - Donor Donations
+      summary: Donor Donations View
+      description: Retrieving the donations of a donor. Authetication Needed.
+      operationId: donor_donations_all
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Donor Donation Delete
+  /donor-account/home/delete/{id}:
+    get:
+      tags:
+        - Donor Home
+      summary: Donation Home Delete
+      description: Delete single donation. Authentication Required
+      operationId: donor_donation_delete_home
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: path
+          name: id
+          type: integer
+          required: true
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Donor Donation Details
+  /donor-account/donations/{id}:
+    get:
+      tags:
+        - Donor Donations
+      summary: Donation Details
+      description: Donation Details. Authentication Required
+      operationId: donor_donation_details
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: path
+          name: id
+          type: integer
+          required: true
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Donor Donation Details
+  /donor-account/donations/delete/{id}:
+    get:
+      tags:
+        - Donor Donations
+      summary: Donation Delete
+      description: Donation Delete. Authentication Required
+      operationId: donor_donation_delete
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: path
+          name: id
+          type: integer
+          required: true
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Donor Notification
+  donor-account/notification/list:
+    get:
+      tags:
+        - Donor Notification
+      summary: Notifications for specific user
+      description: Donor Notification. Authentication is required.
+      operationId: donor_notification_list
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  # Receiver social login
+  /auth/receiver/social-login:
+    post:
+      tags:
+        - Receiver Authentication
+      summary: Receiver Social Login
+      description: Receiver Authentication using various social media services (facebook, google, twitter)
+      operationId: receiver_social_login
+      parameters:
+        - in: body
+          name: Login Request Body
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                required: true
+              email:
+                type: string
+                required: true
+              social_id:
+                type: string
+                required: true
+              service:
+                type: string
+                required: true
+              photo:
+                type: string
+                required: false
+        - in: formData
+          name: device_token
+          type: string
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Donation Store
+  /receiver-account/donation/store/detail:
+    post:
+      tags:
+        - Receiver Donation
+      summary: Receiver Donation Store Details
+      description: Storing donation details. Required Authentication
+      operationId: receiver_store_donation_detail
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: amount
+          type: string
+          required: true
+
+        - in: formData
+          name: tags
+          type: string
+          required: true
+          description: Send request in array form
+
+        - in: formData
+          name: biography
+          type: string
+          required: true
+
+        - in: formData
+          name: image
+          type: file
+          required: true
+          description: Send single image
+
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Donation Store
+  /receiver-account/donation/store/bank:
+    post:
+      tags:
+        - Receiver Donation
+      summary: Receiver Donation Store Bank Details
+      description: Storing donation Bank Details. Required Authentication
+      operationId: receiver_store_donation_bank
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: bank_name
+          type: string
+          required: false
+
+        - in: formData
+          name: account_name
+          type: string
+          required: false
+
+        - in: formData
+          name: account_no
+          type: string
+          required: false
+
+        - in: formData
+          name: ifsc_code
+          type: string
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Home
+  /receiver-account/home:
+    get:
+      tags:
+        - Receiver Home
+      summary: Receiver Home
+      description: Receiver Homepage
+      operationId: receiver_home_page
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Receiver Profile Details
+  /receiver-account/profile:
+    get:
+      tags:
+        - Receiver Profile
+      summary: Receiver Profile Details
+      description: Get Profile Details. Authentication Required
+      operationId: receiver_profile_details
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Receiver Profile Details update
+  /receiver-account/profile/update/detail:
+    post:
+      tags:
+        - Receiver Profile
+      summary: Receiver Profile Update (Details)
+      description: Receiver Profile Update. Authentication Required
+      operationId: receiver_profile_details_update
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: name
+          type: string
+          required: true
+
+        - in: formData
+          name: gender
+          type: string
+          required: true
+
+        - in: formData
+          name: email
+          type: string
+          required: false
+
+        - in: formData
+          name: photo
+          type: file
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Profile Bank Update
+  /receiver-account/profile/update/bank:
+    post:
+      tags:
+        - Receiver Profile
+      summary: Receiver Profile Update (Bank)
+      description: Receiver Profile Update. Authentication Required
+      operationId: receiver_profile_bank_update
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: bank_name
+          type: string
+          required: true
+
+        - in: formData
+          name: account_name
+          type: string
+          required: true
+
+        - in: formData
+          name: account_no
+          type: string
+          required: true
+
+        - in: formData
+          name: ifsc_code
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Profile Post Update
+  /receiver-account/profile/update/post:
+    post:
+      tags:
+        - Receiver Profile
+      summary: Receiver Profile Update (Post)
+      description: Receiver Profile Update. Authentication Required
+      operationId: receiver_profile_post_update
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: formData
+          name: amount
+          type: string
+          required: true
+
+        - in: formData
+          name: biography
+          type: string
+          required: true
+
+        - in: formData
+          name: image
+          type: file
+          required: false
+
+        - in: formData
+          name: tags
+          type: string
+          required: false
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Balance
+  /receiver-account/balance:
+    get:
+      tags:
+        - Receiver Balance
+      summary: Receiver Balance
+      description: List of all donations
+      operationId: receiver_Balance_page
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # Receiver Withdraws
+  /receiver-account/withdraw/create:
+    post:
+      tags:
+        - Receiver Withdraws
+      summary: Request Form of withdraw Money
+      description: Withdraw Process of money from admin. Authetication Needed.
+      operationId: receiver_withdraw_create
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+
+        - in: body
+          name: Login Request Body
+          schema:
+            type: object
+            properties:
+              amount:
+                type: string
+                required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+        "422":
+          description: Unprocessable Entity
+
+  # Receiver Notification
+  receiver-account/notification/list:
+    get:
+      tags:
+        - Receiver Notification
+      summary: Notifications for specific user
+      description: Receiver Notification. Authentication is required.
+      operationId: receiver_notification_list
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  # Post deatils
+  post/detail/{post_id}:
+    get:
+      tags:
+        - Post deatils
+      summary: Deatils of a post
+      description: Post deatils. Authentication is required.
+      operationId: post_details
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  # User Logout
+  /auth/logout:
+    post:
+      tags:
+        - User Logout
+      summary: User logout
+      description: User logout. Authentication is required.
+      operationId: user_logout
+      parameters:
+        - in: header
+          name: Authorization
+          type: string
+          required: true
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  # Donation Tags
+  /tags:
+    get:
+      tags:
+        - Donation Tags List
+      summary: Donation Tags List
+      description: Donation Items
+      operationId: donation_tags
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request
+
+  # App Country List
+  /country-list:
+    get:
+      tags:
+        - Country Code List
+      summary: Country Code for OTP
+      description: Country codes used for sending OTP
+      operationId: country_codes
+      responses:
+        "200":
+          description: Successful Operation
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden request

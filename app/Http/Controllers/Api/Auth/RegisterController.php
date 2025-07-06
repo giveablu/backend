@@ -11,12 +11,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
     public function register(Request $request)
     {
+        // Debug: Log what data is being received
+        \Log::info('Registration request received:', $request->all());
+        
         $validData = Validator::make($request->all(), [
             'name' => 'required',
             'email' => ['required', 'email', 'unique:users'],
@@ -30,6 +34,9 @@ class RegisterController extends Controller
         ]);
 
         if ($validData->fails()) {
+            // Debug: Log validation errors
+            \Log::error('Registration validation failed:', $validData->errors()->toArray());
+            
             $message = collect([
                 $validData->errors()->first('name'),
                 $validData->errors()->first('email'),
@@ -53,6 +60,8 @@ class RegisterController extends Controller
                     'phone' => $request->phone,
                     'role' => $request->role,
                     'password' => Hash::make($request->password),
+                    'search_id' => Str::random(10),
+                    'joined_date' => now(),
                 ]);
 
                 $data = Otp::updateOrCreate([
@@ -60,7 +69,7 @@ class RegisterController extends Controller
                 ], [
                     'phone' => $newuser->phone,
                     'email' => $newuser->email,
-                    'otp' => rand(10000, 99999),
+                    'otp' => random_int(100000, 999999),
                     'expire' => now()->addMinutes(5)
                 ]);
 
