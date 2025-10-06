@@ -51,6 +51,8 @@ Route::prefix('auth')->group(function () {
         Route::post('social-login', [SocialLoginController::class, 'SocialLogin']);
     });
 
+    Route::post('switch-role', [AuthController::class, 'switchRole'])->middleware('auth:sanctum');
+
     // Logout
     Route::post('logout', [LogoutController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('delete/{id}', [AccountController::class, 'deleteAccount'])->middleware('auth:sanctum');

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -33,17 +35,42 @@ class AuthController extends Controller
             return response()->json([
                 'response' => false,
                 'message' => $validator->errors()->all(),
-            ], 400);
+            ], 422);
         }
 
         $user = $request->user();
-        $user->role = $request->role;
-        $user->save();
 
-        return response()->json([
+        if (! $user) {
+            return response()->json([
+                'response' => false,
+                'message' => ['Unauthenticated.'],
+            ], 401);
+        }
+
+        $requestedRole = $request->string('role')->trim();
+        $currentRole = is_string($user->role) ? trim($user->role) : '';
+
+        if (strcasecmp($currentRole, $requestedRole) === 0) {
+            return (new UserResource($user))->additional([
+                'response' => true,
+                'message' => ["You're already using the {$requestedRole} experience."],
+            ]);
+        }
+
+        $previousRole = $currentRole;
+        $user->role = $requestedRole;
+        $user->save();
+        $user->refresh();
+
+        Log::info('User role switched', [
+            'user_id' => $user->id,
+            'from' => $previousRole ?: null,
+            'to' => $requestedRole,
+        ]);
+
+        return (new UserResource($user))->additional([
             'response' => true,
-            'message' => ['Role updated successfully.'],
-            'data' => $user
+            'message' => ["Role updated successfully. You're now in {$requestedRole} mode."],
         ]);
     }
 

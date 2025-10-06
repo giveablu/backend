@@ -15,10 +15,25 @@ class UserRole
      */
     public function handle(Request $request, Closure $next, $role): Response
     {
-        if ($request->user()->role == $role) {
-            return $next($request);
-        } else {
-            return response()->json(['message' => 'Unauthenticated.']);
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'response' => false,
+                'message' => ['Unauthenticated.'],
+            ], 401);
         }
+
+        $userRole = is_string($user->role) ? trim($user->role) : '';
+        $requiredRole = is_string($role) ? trim($role) : '';
+
+        if (strcasecmp($userRole, $requiredRole) === 0) {
+            return $next($request);
+        }
+
+        return response()->json([
+            'response' => false,
+            'message' => ["This endpoint is restricted to {$requiredRole}s."],
+        ], 403);
     }
 }
