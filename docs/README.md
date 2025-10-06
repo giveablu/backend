@@ -164,6 +164,43 @@ REDIS_PASSWORD=null
 REDIS_PORT=6379
 ```
 
+### Local OTP Email Testing
+
+During development you have two reliable options for catching verification emails:
+
+1. **Mailpit SMTP sink (recommended)**
+    - Install Mailpit and run it locally: `mailpit.exe --smtp 1025 --http 8025`
+    - Update `.env` to point to the local instance:
+       ```env
+       MAIL_MAILER=smtp
+       MAIL_HOST=127.0.0.1
+       MAIL_PORT=1025
+       MAIL_USERNAME=null
+       MAIL_PASSWORD=null
+       MAIL_ENCRYPTION=null
+       ```
+    - Open `http://localhost:8025` in your browser to read OTP messages instantly.
+
+2. **Laravel log mailer (no external tools)**
+    - Switch the driver to write emails into `storage/logs/laravel.log`:
+       ```env
+       MAIL_MAILER=log
+       ```
+    - Each registration attempt will append the OTP payload to the log so you can copy it while keeping the database in sync.
+
+When you change mail drivers, clear the config cache with `php artisan config:clear` so Laravel picks up the new settings. The registration endpoint now preserves incomplete sign-ups, so once email delivery is working you can retry with the same address and a fresh OTP will be issued.
+
+### Unverified Account Cleanup
+
+Set the retention window for unverified users with the new environment variables:
+
+```env
+UNVERIFIED_USER_RETENTION_DAYS=14
+UNVERIFIED_USER_PURGE_CHUNK=100
+```
+
+The scheduled command `accounts:purge-unverified` runs daily at 02:00 (app timezone) and removes accounts older than the configured window where neither email nor phone has been verified. Run `php artisan accounts:purge-unverified --dry-run` to preview deletions without modifying data.
+
 #### Web Application (.env.local)
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api

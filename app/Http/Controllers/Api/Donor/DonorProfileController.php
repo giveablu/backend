@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\Donor\DonorProfileResource;
@@ -56,13 +57,14 @@ class DonorProfileController extends Controller
             // update user details
             $user = $request->user();
             $user->update([
-                'name' => $request->name
+                'name' => $request->name,
+                'phone' => $request->phone,
             ]);
 
             // update profile photo
             if (!is_null($request->file('photo'))) {
-                if (!is_null($user->photo)) {
-                    unlink(storage_path('app/public/' . $user->photo));
+                if (!is_null($user->photo) && Storage::disk('public')->exists($user->photo)) {
+                    Storage::disk('public')->delete($user->photo);
                 }
 
                 $path = $request->photo->store('profile/photo', 'public');

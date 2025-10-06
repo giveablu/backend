@@ -22,7 +22,7 @@ use App\Http\Controllers\Api\Donor\DonorNotificationController;
 use App\Http\Controllers\Api\Receiver\ReceiverBalanceController;
 use App\Http\Controllers\Api\Receiver\ReceiverProfileController;
 use App\Http\Controllers\Api\Receiver\ReceiverWithdrawController;
-use App\Http/Controllers/Api/Receiver/ReceiverNotificationController;
+use App\Http\Controllers\Api\Receiver\ReceiverNotificationController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return new UserResource($request->user());

@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -23,13 +26,17 @@ class User extends Authenticatable
         'password',
         'phone',
         'role',
-        'search_id',
         'photo',
+        'search_id',
         'joined_date',
         'email_verified_at',
         'phone_verified_at',
         'device_token',
         'gender',
+        'profile_description',
+        'city',
+        'region',
+        'country',
         'reset_otp',
         'reset_otp_expires_at',
         'reset_token',
@@ -61,4 +68,39 @@ class User extends Authenticatable
         'reset_otp_expires_at' => 'datetime',
         'reset_token_expires_at' => 'datetime',
     ];
+
+    public function post(): HasOne
+    {
+        return $this->hasOne(Post::class);
+    }
+
+    public function bankDetail(): HasOne
+    {
+        return $this->hasOne(BankDetail::class);
+    }
+
+    public function withdraws(): HasMany
+    {
+        return $this->hasMany(Withdraw::class);
+    }
+
+    public function donations(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'donations', 'user_id', 'post_id')
+            ->withTimestamps()
+            ->withPivot([
+                'gross_amount',
+                'processing_fee',
+                'platform_fee',
+                'net_amount',
+                'currency',
+                'processor_payload',
+                'activity',
+            ]);
+    }
+
+    public function deleteds(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'delete_post', 'user_id', 'post_id')->withTimestamps();
+    }
 }

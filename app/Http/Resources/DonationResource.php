@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Post;
-use App\Models\Donation;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
@@ -24,7 +23,11 @@ class DonationResource extends JsonResource
             'short_bio' => $this->when(!$request->segment(4), fn() => Str::limit($post->biography, 50, '...')),
             'biography' => $this->when($request->segment(4), fn() => $post->biography),
             'image' => URL::to('/storage') . '/' . $post->image,
-            'paid_amount' => $this->paid_amount,
+            'gross_amount' => $this->gross_amount,
+            'processing_fee' => $this->processing_fee,
+            'platform_fee' => $this->platform_fee,
+            'net_amount' => $this->net_amount,
+            'currency' => $this->currency,
             'target_amount' => $this->post->amount,
             'date' => Carbon::parse($this->updated_at)->format('m-d-Y'),
             'tags' => $this->when($request->segment(4), fn() => TagResource::collection(($post->tags)))

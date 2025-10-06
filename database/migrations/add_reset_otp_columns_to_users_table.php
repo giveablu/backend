@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'reset_otp')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->string('reset_otp', 6)->nullable()->after('remember_token');
             $table->timestamp('reset_otp_expires_at')->nullable()->after('reset_otp');
@@ -24,6 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasColumn('users', 'reset_otp')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['reset_otp', 'reset_otp_expires_at', 'reset_token', 'reset_token_expires_at']);
         });

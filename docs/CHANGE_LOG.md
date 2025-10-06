@@ -41,6 +41,36 @@ Each entry follows this format:
 
 ## Recent Changes (Newest First)
 
+### 2025-10-04 - Bugfix - Persistent SQLite login failures
+
+**Type**: bugfix
+
+**Description**: Resolved API login 500 errors caused by the development server booting with the in-memory `.env.testing` configuration. Documented the fix and ensured the runtime now loads the persistent SQLite database that migrations and seeders target.
+
+**Files Changed**:
+- `.env`
+- `config/database.php`
+- `scripts/restart-stack.ps1`
+- `scripts/start-stack.ps1`
+
+**Technical Details**:
+- Forced `APP_ENV=local` in the active `.env` so Laravel ignores the testing override that swapped to `:memory:` SQLite.
+- Normalized the SQLite connection to expand relative `DB_DATABASE` paths into absolute paths when serving from `public/`.
+- Restart script guarantees the SQLite file exists before migrating, runs `migrate:fresh --seed`, and launches both services with the resolved PHP executable.
+- Start script accepts the PHP path so `artisan serve` runs with the same binary discovered during restart.
+
+**Impact Assessment**: Medium – fixes broken local login flow and stabilizes the developer testing environment.
+
+**Testing Notes**:
+- `./restart-stack.ps1 -FreshDatabase`
+- `Invoke-WebRequest http://127.0.0.1:8000/api/auth/sign-in` (returns 200 with donor payload)
+- `php artisan test`
+
+**Deployment Notes**:
+- Ensure `.env` keeps `APP_ENV=local` with `DB_CONNECTION=sqlite` and `DB_DATABASE=database/database.sqlite` for local development.
+
+---
+
 ### 2024-12-21 - Bugfix - Backend Registration Issue Investigation
 
 **Type**: bugfix|investigation

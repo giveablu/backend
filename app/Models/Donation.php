@@ -12,8 +12,22 @@ class Donation extends Model
     protected $fillable = [
         'post_id',
         'user_id',
-        'paid_amount',
-        'activity'
+        'gross_amount',
+        'processing_fee',
+        'platform_fee',
+        'net_amount',
+        'currency',
+        'processor_payload',
+        'activity',
+    ];
+
+    protected $casts = [
+        'gross_amount' => 'decimal:2',
+        'processing_fee' => 'decimal:2',
+        'platform_fee' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+        'processor_payload' => 'array',
+        'activity' => 'boolean',
     ];
 
 

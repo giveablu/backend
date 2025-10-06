@@ -1,19 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+// Legacy stub intentionally left blank. Original PaypalPayment class now lives in
+// `app/Http/Controllers/PaypalPayment.php` to align with PSR-4 autoloading rules.
 
-use App\Models\AppFaq;
-use Illuminate\Http\Request;
-
-class PaypalPayment extends Controller
-{
-    public function success()
-    {
-        return view('paypal-success');
-    }
-
-    public function cancel()
-    {
-        return view('paypal-cancel');
-    }
-}
+return true;

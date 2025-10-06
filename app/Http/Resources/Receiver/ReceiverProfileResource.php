@@ -29,6 +29,16 @@ class ReceiverProfileResource extends JsonResource
             'gender' => $user->gender,
             'joined_date' => $user->joined_date ? $user->joined_date->format('m-d-Y') : ($user->updated_at ? $user->updated_at->format('m-d-Y') : null),
             'photo' => $this->userPhoto(),
+            'profile_description' => $user->profile_description,
+            'city' => $user->city,
+            'region' => $user->region,
+            'country' => $user->country,
+            'profile_location' => [
+                'city' => $user->city,
+                'region' => $user->region,
+                'country' => $user->country,
+                'display' => collect([$user->city, $user->region, $user->country])->filter()->implode(', '),
+            ],
 
             // Bank/PayPal fields
             'bank_detail' => $bank ? [
@@ -55,6 +65,7 @@ class ReceiverProfileResource extends JsonResource
             'location' => $post ? $post->location : null,
             'age' => $post ? $post->age : null,
             // Tags/Hardships
+            'hardships' => $post && $post->tags ? \App\Http\Resources\TagResource::collection($post->tags) : [],
             'tags' => $post && $post->tags ? \App\Http\Resources\TagResource::collection($post->tags) : [],
         ];
     }

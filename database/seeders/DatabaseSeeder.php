@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             SettingSeeder::class,
             TagSeeder::class,
+            BluDemoSeeder::class,
         ]);
     }
 }

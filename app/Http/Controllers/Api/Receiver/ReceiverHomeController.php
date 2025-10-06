@@ -9,6 +9,7 @@ use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\AppFaqResource;
@@ -76,8 +77,8 @@ class ReceiverHomeController extends Controller
 
             // file upload
             if (!is_null($request->file('image'))) {
-                if ($post->image !== null) {
-                    unlink(storage_path('app/public/' . $post->image));
+                if (!empty($post->image) && Storage::disk('public')->exists($post->image)) {
+                    Storage::disk('public')->delete($post->image);
                 }
 
                 $path = $request->image->store('post/image', 'public');

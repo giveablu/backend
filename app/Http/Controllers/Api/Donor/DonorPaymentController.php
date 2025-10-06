@@ -38,18 +38,26 @@ class DonorPaymentController extends Controller
         } else {
             $default_amount = Setting::select('default_amount')->first()->default_amount;
 
-            if ($request->tobepaid >= $default_amount) {
+            $grossAmount = (float) $request->tobepaid;
+
+            if ($grossAmount >= $default_amount) {
                 $post = Post::where('id', $request->donation_id)->first();
                 if ($post) {
-                    // Update donation table
+                    [$processingFee, $platformFee, $netAmount] = $this->calculateSplit($grossAmount);
+
                     $request->user()->donations()->attach($request->donation_id, [
-                        'paid_amount' => $request->tobepaid,
+                        'gross_amount' => $grossAmount,
+                        'processing_fee' => $processingFee,
+                        'platform_fee' => $platformFee,
+                        'net_amount' => $netAmount,
+                        'currency' => $this->resolveCurrency(),
+                        'processor_payload' => null,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now(),
                     ]);
-                    // update receiver balance
+
                     $post->update([
-                        'paid' => (int)$post->paid + (int)$request->tobepaid
+                        'paid' => (float) $post->paid + $netAmount
                     ]);
 
                     // notification list
@@ -59,7 +67,12 @@ class DonorPaymentController extends Controller
                         'image' => $this->userPhoto($request->user()->photo),
                         'description' => $post->biography,
                         'date' => Carbon::now(),
-                        'amount' => $request->tobepaid
+                        'amount' => $netAmount,
+                        'metadata' => [
+                            'gross_amount' => $grossAmount,
+                            'processing_fee' => $processingFee,
+                            'platform_fee' => $platformFee,
+                        ],
                     ];
 
                     $user = User::find($post->user);
@@ -69,13 +82,17 @@ class DonorPaymentController extends Controller
 
                     // push notification
                     $title = 'New Donation Received';
-                    $body = 'you have got a payment of $' . $request->tobepaid;
+                    $body = sprintf(
+                        'You received $%0.2f (after $%0.2f in fees).',
+                        $netAmount,
+                        $processingFee + $platformFee
+                    );
                     $pageName = "ReceiverBalanceScreen";
 
                     $tokens = $user->whereNotNull('device_token')->pluck('device_token')->toArray();
                     Notification::send(null, new PushNotification($title, $body, $pageName, $tokens));
 
-                    return response()->json(['response' => true, 'message' => ['payment Done']]);
+                    return response()->json(['response' => true, 'message' => ['Payment recorded successfully.']]);
                 } else {
                     return response()->json(['response' => false, 'message' => ['Post not found']]);
                 }
@@ -92,5 +109,25 @@ class DonorPaymentController extends Controller
         } else {
             return null;
         }
+    }
+
+    private function calculateSplit(float $gross): array
+    {
+        $processingFee = round($gross * 0.03, 2);
+        $platformFee = round($gross * 0.02, 2);
+        $netAmount = round($gross - $processingFee - $platformFee, 2);
+
+        // Handle rounding discrepancies by adjusting platform fee
+        $difference = round($gross - ($processingFee + $platformFee + $netAmount), 2);
+        if ($difference !== 0.0) {
+            $platformFee = round($platformFee + $difference, 2);
+        }
+
+        return [$processingFee, $platformFee, $netAmount];
+    }
+
+    private function resolveCurrency(): string
+    {
+        return config('app.currency', 'USD');
     }
 }

@@ -11,7 +11,10 @@ class BankDetail extends Model
 
     protected $fillable = [
         'user_id',
+        'bank_name',
         'account_name',
+        'account_no',
+        'ifsc_code',
         'account_id_type',
         'paypal_account_id',
         'currency'

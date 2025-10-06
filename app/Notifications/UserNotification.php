@@ -31,6 +31,7 @@ class UserNotification extends Notification
             'description' => $this->data['description'],
             'amount' => $this->data['amount'],
             'date' => $this->data['date'],
+            'metadata' => $this->data['metadata'] ?? null,
         ];
     }
 }
