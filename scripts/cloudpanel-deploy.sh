@@ -9,6 +9,7 @@ APP_DIR="/home/blu-service/htdocs/service.blu.gives"
 PHP_BIN="/usr/bin/php"
 COMPOSER_BIN="/usr/local/bin/composer"
 BRANCH="main"
+HEALTHCHECK_URL="${DEPLOY_HEALTHCHECK_URL:-}"
 
 log() {
   printf '[deploy] %s\n' "$1"
@@ -56,5 +57,17 @@ $PHP_BIN artisan queue:restart || true
 
 log "Bringing application out of maintenance"
 $PHP_BIN artisan up
+
+if [ -n "$HEALTHCHECK_URL" ]; then
+  log "Running health check against $HEALTHCHECK_URL"
+  if curl --fail --silent --show-error --max-time 10 "$HEALTHCHECK_URL" > /dev/null; then
+    log "Health check succeeded"
+  else
+    log "Health check failed"
+    exit 1
+  fi
+else
+  log "Skipping health check (DEPLOY_HEALTHCHECK_URL not set)"
+fi
 
 log "Deployment finished successfully"
