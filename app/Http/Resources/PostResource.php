@@ -24,7 +24,7 @@ class PostResource extends JsonResource
             'biography' => $this->biography,
             'date' => Carbon::parse($this->updated_at)->format('m-d-Y'),
             'date_time' => Carbon::parse($this->updated_at)->format('m-d-Y h:i a'),
-            'image' => URL::to('/storage') . '/' . $this->image,
+            'image' => $this->image ? URL::to('/storage') . '/' . ltrim($this->image, '/') : null,
             'location' => $this->location,
             'age' => $this->age,
             'family_size' => $this->family_size,

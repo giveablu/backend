@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'impact_feed' => [
+        'url' => env('IMPACT_FEED_URL'),
+        'api_key' => env('IMPACT_FEED_API_KEY'),
+    ],
+
 ];

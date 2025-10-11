@@ -43,11 +43,13 @@ class ReceiverProfileController extends Controller
             'gender' => 'nullable|string|max:50',
             'photo' => 'nullable|image|max:10240',
             'profile_description' => 'nullable|string|max:1000',
-            'city' => 'nullable|string|max:150',
+            'city' => 'required|string|max:150',
             'region' => 'nullable|string|max:150',
-            'country' => 'nullable|string|max:150',
+            'country' => 'required|string|max:150',
         ], [
-            'photo.max' => 'Photo must be under 10MB'
+            'photo.max' => 'Photo must be under 10MB',
+            'city.required' => 'City is required.',
+            'country.required' => 'Country is required.',
         ]);
 
         if ($valid->fails()) {

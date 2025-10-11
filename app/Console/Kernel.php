@@ -13,6 +13,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('accounts:purge-unverified')->dailyAt('02:00');
+
+        if (config('services.impact_feed.url')) {
+            $schedule->command('impact:sync')->dailyAt('03:00')->withoutOverlapping();
+        }
     }
 
     /**

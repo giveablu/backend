@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\Receiver\ReceiverBalanceController;
 use App\Http\Controllers\Api\Receiver\ReceiverProfileController;
 use App\Http\Controllers\Api\Receiver\ReceiverWithdrawController;
 use App\Http\Controllers\Api\Receiver\ReceiverNotificationController;
+use App\Http\Controllers\Api\ImpactController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return new UserResource($request->user());
@@ -129,6 +130,8 @@ Route::group(['middleware' => 'auth:sanctum', 'prefix' => 'receiver-account'], f
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('post/detail/{id}', [DonorHomeController::class, 'detail']);
 });
+
+Route::get('impact/estimate', [ImpactController::class, 'estimate']);
 
 Route::get('country-list', [SendDataController::class, 'sendCountry']);
 Route::get('tags', [SendDataController::class, 'sendTag']);
