@@ -11,9 +11,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use App\Notifications\NewUserRegistered;
 
 class RegisterController extends Controller
 {
@@ -130,6 +132,22 @@ class RegisterController extends Controller
                 'response' => false,
                 'message' => ['We saved your registration but could not send the verification email. Please try again once email service is restored.'],
             ], 500);
+        }
+
+        try {
+            $admins = User::query()
+                ->where('role', 'admin')
+                ->where('id', '!=', $user->id)
+                ->get();
+
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new NewUserRegistered($user));
+            }
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to notify admins of new registration', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
         }
 
         return response()->json([

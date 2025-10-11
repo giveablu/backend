@@ -38,6 +38,13 @@ class LoginController extends Controller
                         'message' => ['Provided credentials are incorrect']
                     ]);
                 } else {
+                    if ($user->status === 'suspended') {
+                        return response()->json([
+                            'response' => false,
+                            'message' => ['Your account has been suspended. Please contact support for assistance.']
+                        ], 403);
+                    }
+
                     // Check if email is verified (but don't block login)
                     if (!$user->email_verified_at) {
                         return response()->json([
@@ -52,9 +59,10 @@ class LoginController extends Controller
 
                     $token = $user->createToken('app-token')->plainTextToken;
 
-                    $user->update([
-                        'device_token' => $request->device_token
-                    ]);
+                    $user->forceFill([
+                        'device_token' => $request->device_token,
+                        'last_login_at' => now(),
+                    ])->save();
 
                     return (new UserResource($user))->additional([
                         'response' => true,
