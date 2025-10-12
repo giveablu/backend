@@ -6,6 +6,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -256,8 +257,14 @@ class AdminUser extends Component
             ->first();
 
         $post = $user->post()
-            ->select(['paid', 'amount', 'activity'])
+            ->select($this->resolvePostMetricsColumns())
             ->first();
+
+        $postData = $post ? $post->toArray() : null;
+
+        if (is_array($postData) && ! array_key_exists('activity', $postData)) {
+            $postData['activity'] = null;
+        }
 
         return [
             'search_id' => $user->search_id,
@@ -269,8 +276,19 @@ class AdminUser extends Component
             'phone_verified_at' => $user->phone_verified_at,
             'donations_count' => (int) ($donationStats->count ?? 0),
             'donations_total' => (float) ($donationStats->total ?? 0),
-            'post' => $post,
+            'post' => $postData,
             'is_online' => $lastLogin ? $lastLogin->greaterThanOrEqualTo(now()->subMinutes(10)) : false,
         ];
+    }
+
+    protected function resolvePostMetricsColumns(): array
+    {
+        $columns = ['paid', 'amount'];
+
+        if (Schema::hasColumn('posts', 'activity')) {
+            $columns[] = 'activity';
+        }
+
+        return $columns;
     }
 }
