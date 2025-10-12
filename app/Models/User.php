@@ -123,6 +123,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Post::class, 'delete_post', 'user_id', 'post_id')->withTimestamps();
     }
 
+    public function donorPreference(): HasOne
+    {
+        return $this->hasOne(DonorPreference::class);
+    }
+
     protected static function formatSearchId(int $id): string
     {
         return sprintf('BLU-%06d', $id);

@@ -31,13 +31,26 @@ class DonorProfileController extends Controller
 
     public function update(Request $request)
     {
+        $hardshipInput = $request->input('preferred_hardship_ids');
+        if (is_string($hardshipInput)) {
+            $decoded = json_decode($hardshipInput, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['preferred_hardship_ids' => $decoded]);
+            }
+        }
+
         $valid = Validator::make($request->all(), [
             'name' => ['required', 'string'],
             'email' => ['required', 'email', Rule::unique('users')->ignore($request->user()->id)],
             'phone' => ['required', Rule::unique('users')->ignore($request->user()->id)],
             'photo' => ['nullable', 'image', 'max:10240'],
             'password' => ['nullable', Rule::requiredIf($request->filled('old_password')), 'confirmed', Rules\Password::defaults()],
-            'old_password' => ['nullable', Rule::requiredIf($request->filled('password'))]
+            'old_password' => ['nullable', Rule::requiredIf($request->filled('password'))],
+            'preferred_country' => ['nullable', 'string', 'max:150'],
+            'preferred_region' => ['nullable', 'string', 'max:150'],
+            'preferred_city' => ['nullable', 'string', 'max:150'],
+            'preferred_hardship_ids' => ['nullable', 'array'],
+            'preferred_hardship_ids.*' => ['integer', Rule::exists('tags', 'id')],
         ], [
             'photo.max' => 'Photo must be under 10MB'
         ]);
@@ -50,6 +63,10 @@ class DonorProfileController extends Controller
                 $valid->errors()->first('photo'),
                 $valid->errors()->first('old_password'),
                 $valid->errors()->first('password'),
+                $valid->errors()->first('preferred_country'),
+                $valid->errors()->first('preferred_region'),
+                $valid->errors()->first('preferred_city'),
+                $valid->errors()->first('preferred_hardship_ids'),
             ])->filter(fn ($item, $key) => !empty($item))->values();
 
             return response()->json(['response' => false, 'message' => $message]);
@@ -120,12 +137,57 @@ class DonorProfileController extends Controller
                 }
             }
 
+            $normalizedCountry = $this->normalizeInputString($request->input('preferred_country'));
+            $normalizedRegion = $this->normalizeInputString($request->input('preferred_region'));
+            $normalizedCity = $this->normalizeInputString($request->input('preferred_city'));
+            $normalizedHardshipIds = $this->normalizeHardshipIds($request->input('preferred_hardship_ids', []));
+
+            if ($normalizedCountry || $normalizedRegion || $normalizedCity || !empty($normalizedHardshipIds)) {
+                $user->donorPreference()->updateOrCreate([], [
+                    'preferred_country' => $normalizedCountry,
+                    'preferred_region' => $normalizedRegion,
+                    'preferred_city' => $normalizedCity,
+                    'preferred_hardship_ids' => !empty($normalizedHardshipIds) ? $normalizedHardshipIds : null,
+                ]);
+            } else {
+                if ($user->donorPreference) {
+                    $user->donorPreference->delete();
+                }
+            }
+
             // send data
             return (new DonorProfileResource($request->user()))->additional([
                 'response' => true,
                 'message' => ['Profile Updated Successfully']
             ]);
         }
+    }
+
+
+    protected function normalizeInputString($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $string = is_string($value) ? $value : (string) $value;
+        $trimmed = trim($string);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    protected function normalizeHardshipIds($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return collect($value)
+            ->filter(static fn ($entry) => is_int($entry) || (is_string($entry) && ctype_digit($entry)))
+            ->map(static fn ($entry) => (int) $entry)
+            ->unique()
+            ->values()
+            ->all();
     }
 
 

@@ -20,22 +20,57 @@ class DonorHomeController extends Controller
 
     public function index(Request $request)
     {
-        $posts = Post::get();
+        $user = $request->user()->load('donorPreference');
+
+        $excludedPostIds = $user->deleteds()->pluck('post_id');
+
+        $query = Post::query()
+            ->whereNotIn('id', $excludedPostIds)
+            ->whereHas('user', fn ($builder) => $builder->where('role', 'receiver'))
+            ->with(['user', 'tags']);
+
+        $preference = $user->donorPreference;
+
+        if ($preference) {
+            if ($preference->preferred_country) {
+                $query->whereHas('user', fn ($builder) => $builder->where('country', $preference->preferred_country));
+            }
+
+            if ($preference->preferred_region) {
+                $query->whereHas('user', fn ($builder) => $builder->where('region', $preference->preferred_region));
+            }
+
+            if ($preference->preferred_city) {
+                $query->whereHas('user', fn ($builder) => $builder->where('city', $preference->preferred_city));
+            }
+
+            if (!empty($preference->preferred_hardship_ids)) {
+                $query->whereHas('tags', fn ($builder) => $builder->whereIn('tags.id', $preference->preferred_hardship_ids));
+            }
+        }
+
+        $posts = $query->inRandomOrder()->paginate(4);
 
         if ($posts->count() > 0) {
-            $nondels = $posts->diff($request->user()->refresh()->deleteds);
-
-            if ($nondels->count() > 0) {
-                return DonorHomeResource::collection($nondels->toQuery()->OrderBy('id', 'DESC')->paginate(4))->additional([
-                    'response' => true,
-                    'message' => ['Donor Home']
-                ]);
-            } else {
-                return response()->json(['response' => false, 'message' => ['No Donation Found']]);
-            }
-        } else {
-            return response()->json(['response' => false, 'message' => ['No Data Found']]);
+            return DonorHomeResource::collection($posts)->additional([
+                'response' => true,
+                'message' => ['Donor Home']
+            ]);
         }
+
+        if ($preference && ($preference->preferred_country || $preference->preferred_region || $preference->preferred_city || !empty($preference->preferred_hardship_ids))) {
+            return response()->json([
+                'response' => false,
+                'message' => ['No recipients match your preferences yet. Try adjusting your criteria.'],
+                'data' => [],
+            ]);
+        }
+
+        return response()->json([
+            'response' => false,
+            'message' => ['No Donation Found'],
+            'data' => [],
+        ]);
     }
 
     public function softDelete(Request $request, $id)

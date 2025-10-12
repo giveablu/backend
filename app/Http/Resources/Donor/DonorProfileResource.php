@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\Donor;
 
+use App\Http\Resources\TagResource;
+use App\Models\DonorPreference;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
@@ -22,7 +25,8 @@ class DonorProfileResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'joined_date' => Carbon::parse($this->updated_at)->format('m-d-Y'),
-            'photo' => $this->photo()
+            'photo' => $this->photo(),
+            'preferences' => $this->buildPreferences($this->donorPreference)
         ];
     }
 
@@ -33,5 +37,23 @@ class DonorProfileResource extends JsonResource
         } else {
             return URL::to('/storage') . '/' . $this->photo;
         }
+    }
+
+    protected function buildPreferences(?DonorPreference $preference): ?array
+    {
+        if (! $preference) {
+            return null;
+        }
+
+        $hardshipIds = $preference->preferred_hardship_ids ?? [];
+        $hardshipTags = empty($hardshipIds) ? collect() : Tag::whereIn('id', $hardshipIds)->get();
+
+        return [
+            'country' => $preference->preferred_country,
+            'region' => $preference->preferred_region,
+            'city' => $preference->preferred_city,
+            'hardship_ids' => $hardshipIds,
+            'hardships' => TagResource::collection($hardshipTags),
+        ];
     }
 }
