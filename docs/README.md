@@ -384,6 +384,19 @@ php artisan test --filter=ApiTest
 
 ### Backend Deployment
 
+#### SSH Access
+- Host: `18.207.210.125`
+- User: `blu-service`
+- Cloudflare proxies `service.blu.gives`, so SSH must target the origin IP directly.
+
+```bash
+# Connect from your local machine
+ssh blu-service@18.207.210.125
+
+# Once connected, switch to the project directory
+cd /home/blu-service/htdocs/service.blu.gives
+```
+
 #### Production Server Setup
 ```bash
 # Install dependencies

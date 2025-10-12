@@ -15,6 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&amp;display=swap" rel="stylesheet">
 
     <link href="{{ asset('panel/css/light.css') }}" rel="stylesheet">
+    @livewireStyles
 
     <style>
         body {
@@ -56,6 +57,7 @@
     <script src="{{ asset('panel/js/app.js') }}"></script>
     <script src="{{ asset('panel/js/axios.min.js') }}"></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
+    @livewireScripts
     @stack('admin-script')
     <script>
         // Your web app's Firebase configuration
