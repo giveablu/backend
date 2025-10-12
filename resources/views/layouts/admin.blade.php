@@ -57,7 +57,7 @@
     <script src="{{ asset('panel/js/app.js') }}"></script>
     <script src="{{ asset('panel/js/axios.min.js') }}"></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
-    @livewireScripts
+    @livewireScripts(['asset_url' => asset('vendor/livewire')])
     @stack('admin-script')
     <script>
         // Your web app's Firebase configuration
