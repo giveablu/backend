@@ -176,7 +176,9 @@ class SocialLoginController extends Controller
 
         $user->update([
 
-            'device_token' => $request->device_token
+            'device_token' => $request->device_token,
+
+            'last_login_at' => now()
 
         ]);
 

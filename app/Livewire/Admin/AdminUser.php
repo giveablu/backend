@@ -220,13 +220,40 @@ class AdminUser extends Component
     protected function applyFilters(Builder $query): Builder
     {
         if ($this->search !== '') {
-            $searchTerm = '%' . trim($this->search) . '%';
-            $query->where(function (Builder $inner) use ($searchTerm) {
-                $inner->where('name', 'like', $searchTerm)
-                    ->orWhere('email', 'like', $searchTerm)
-                    ->orWhere('phone', 'like', $searchTerm)
-                    ->orWhere('search_id', 'like', $searchTerm);
-            });
+            $searchValue = trim($this->search);
+            if ($searchValue !== '') {
+                $searchTerm = '%' . $searchValue . '%';
+                $columns = $this->resolveSearchableColumns();
+                $digitsOnly = preg_replace('/\D+/', '', $searchValue);
+                $digitsOnly = $digitsOnly ?? '';
+                $shouldSearchPhone = strlen($digitsOnly) >= 3;
+
+                $query->where(function (Builder $inner) use ($columns, $searchTerm, $searchValue, $digitsOnly, $shouldSearchPhone) {
+                    foreach ($columns as $column) {
+                        if ($column === 'phone') {
+                            if ($shouldSearchPhone) {
+                                $inner->orWhere(function (Builder $phoneQuery) use ($digitsOnly) {
+                                    $phoneQuery
+                                        ->whereNotNull('phone')
+                                        ->where('phone', 'like', '%' . $digitsOnly . '%');
+                                });
+                            }
+
+                            continue;
+                        }
+
+                        $inner->orWhere($column, 'like', $searchTerm);
+                    }
+
+                    if (! in_array('phone', $columns, true) && $shouldSearchPhone) {
+                        $inner->orWhere('phone', 'like', '%' . $digitsOnly . '%');
+                    }
+
+                    if (ctype_digit($searchValue)) {
+                        $inner->orWhere('id', (int) $searchValue);
+                    }
+                });
+            }
         }
 
         if ($this->roleFilter !== 'all') {
@@ -287,6 +314,21 @@ class AdminUser extends Component
 
         if (Schema::hasColumn('posts', 'activity')) {
             $columns[] = 'activity';
+        }
+
+        return $columns;
+    }
+
+    protected function resolveSearchableColumns(): array
+    {
+        $columns = ['name', 'email'];
+
+        if (Schema::hasColumn('users', 'phone')) {
+            $columns[] = 'phone';
+        }
+
+        if (Schema::hasColumn('users', 'search_id')) {
+            $columns[] = 'search_id';
         }
 
         return $columns;

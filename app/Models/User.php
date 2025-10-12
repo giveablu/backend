@@ -15,6 +15,22 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::created(function (self $user): void {
+            if (! $user->search_id) {
+                $user->forceFill([
+                    'search_id' => self::formatSearchId($user->id),
+                ]);
+
+                $originalTimestamps = $user->timestamps;
+                $user->timestamps = false;
+                $user->save();
+                $user->timestamps = $originalTimestamps;
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,14 +40,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
-    'role',
-    'status',
+    'phone',
+	'role',
+	'status',
         'photo',
         'search_id',
         'joined_date',
         'email_verified_at',
         'phone_verified_at',
+    'last_login_at',
         'device_token',
         'gender',
         'profile_description',
@@ -104,5 +121,10 @@ class User extends Authenticatable
     public function deleteds(): BelongsToMany
     {
         return $this->belongsToMany(Post::class, 'delete_post', 'user_id', 'post_id')->withTimestamps();
+    }
+
+    protected static function formatSearchId(int $id): string
+    {
+        return sprintf('BLU-%06d', $id);
     }
 }

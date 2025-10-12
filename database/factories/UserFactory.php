@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'status' => 'active',
             'phone' => fake()->unique()->numerify('555########'),
             'last_login_at' => now()->subMinutes(random_int(10, 1440)),
+            'search_id' => null,
         ];
     }
 

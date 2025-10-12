@@ -53,7 +53,8 @@ class OtpVerifyController extends Controller
                     $token = $user->createToken('app-token')->plainTextToken;
 
                     $user->update([
-                        'device_token' => $request->device_token
+                        'device_token' => $request->device_token,
+                        'last_login_at' => now(),
                     ]);
 
                     return (new UserResource($user))->additional([
