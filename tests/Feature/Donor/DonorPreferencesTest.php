@@ -71,4 +71,49 @@ class DonorPreferencesTest extends TestCase
         $this->assertCount(1, $data);
         $this->assertSame($matchingPost->id, $data[0]['id']);
     }
+
+    public function test_donor_home_falls_back_to_general_feed_when_no_matches(): void
+    {
+        $donor = User::factory()->create([
+            'role' => 'donor',
+        ]);
+
+        $tagEducation = Tag::create(['name' => 'Education']);
+
+        $receiver = User::factory()->create([
+            'role' => 'receiver',
+            'country' => 'Nigeria',
+            'region' => 'Lagos',
+            'city' => 'Lagos',
+        ]);
+
+        $post = Post::create([
+            'user_id' => $receiver->id,
+            'amount' => '60.00',
+            'biography' => 'Support health',
+            'image' => 'images/recipient-health.jpg',
+        ]);
+        $post->tags()->attach($tagEducation->id);
+
+        DonorPreference::create([
+            'user_id' => $donor->id,
+            'preferred_country' => 'Kenya',
+            'preferred_region' => 'Nairobi County',
+            'preferred_city' => 'Nairobi',
+            'preferred_hardship_ids' => [$tagEducation->id],
+        ]);
+
+        Sanctum::actingAs($donor);
+
+        $response = $this->getJson('/api/donor-account/home');
+
+        $response->assertOk();
+
+        $this->assertSame('fallback', $response->json('preference_status'));
+
+        $data = $response->json('data');
+
+        $this->assertCount(1, $data);
+        $this->assertSame($post->id, $data[0]['id']);
+    }
 }

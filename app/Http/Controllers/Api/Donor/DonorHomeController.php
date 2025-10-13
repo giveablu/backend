@@ -24,28 +24,35 @@ class DonorHomeController extends Controller
 
         $excludedPostIds = $user->deleteds()->pluck('post_id');
 
-        $query = Post::query()
+        $baseQuery = Post::query()
             ->whereNotIn('id', $excludedPostIds)
             ->whereHas('user', fn ($builder) => $builder->where('role', 'receiver'))
             ->with(['user', 'tags']);
 
+        $query = clone $baseQuery;
+
         $preference = $user->donorPreference;
+        $hasActivePreference = false;
 
         if ($preference) {
             if ($preference->preferred_country) {
                 $query->whereHas('user', fn ($builder) => $builder->where('country', $preference->preferred_country));
+                $hasActivePreference = true;
             }
 
             if ($preference->preferred_region) {
                 $query->whereHas('user', fn ($builder) => $builder->where('region', $preference->preferred_region));
+                $hasActivePreference = true;
             }
 
             if ($preference->preferred_city) {
                 $query->whereHas('user', fn ($builder) => $builder->where('city', $preference->preferred_city));
+                $hasActivePreference = true;
             }
 
             if (!empty($preference->preferred_hardship_ids)) {
                 $query->whereHas('tags', fn ($builder) => $builder->whereIn('tags.id', $preference->preferred_hardship_ids));
+                $hasActivePreference = true;
             }
         }
 
@@ -58,7 +65,17 @@ class DonorHomeController extends Controller
             ]);
         }
 
-        if ($preference && ($preference->preferred_country || $preference->preferred_region || $preference->preferred_city || !empty($preference->preferred_hardship_ids))) {
+        if ($preference && $hasActivePreference) {
+            $fallbackPosts = (clone $baseQuery)->inRandomOrder()->paginate(4);
+
+            if ($fallbackPosts->count() > 0) {
+                return DonorHomeResource::collection($fallbackPosts)->additional([
+                    'response' => true,
+                    'message' => ['We found recipients outside your saved preferences while we locate more matches.'],
+                    'preference_status' => 'fallback',
+                ]);
+            }
+
             return response()->json([
                 'response' => false,
                 'message' => ['No recipients match your preferences yet. Try adjusting your criteria.'],
