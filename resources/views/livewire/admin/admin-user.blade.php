@@ -269,6 +269,79 @@
                         </div>
                     </div>
 
+                    @if (($editForm['role'] ?? null) === 'receiver')
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-semibold mb-0">Recipient profile</h6>
+                            <span class="badge bg-info-subtle text-info">Visible to donors</span>
+                        </div>
+                        <p class="text-muted small">Update location, story, and hardship tags so this receiver appears in donor searches.</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Country</label>
+                                <input type="text" class="form-control @error('editForm.country') is-invalid @enderror" placeholder="e.g. Kenya" wire:model.defer="editForm.country">
+                                @error('editForm.country')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Region / State</label>
+                                <input type="text" class="form-control @error('editForm.region') is-invalid @enderror" placeholder="e.g. Nairobi County" wire:model.defer="editForm.region">
+                                @error('editForm.region')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control @error('editForm.city') is-invalid @enderror" placeholder="e.g. Nairobi" wire:model.defer="editForm.city">
+                                @error('editForm.city')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label mt-3">Profile headline</label>
+                            <textarea class="form-control @error('editForm.profile_description') is-invalid @enderror" rows="2" placeholder="Short introduction" wire:model.defer="editForm.profile_description"></textarea>
+                            @error('editForm.profile_description')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <label class="form-label">Funding goal (optional)</label>
+                                <input type="text" class="form-control @error('editForm.post_amount') is-invalid @enderror" placeholder="e.g. 250" wire:model.defer="editForm.post_amount">
+                                @error('editForm.post_amount')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Story visible to donors</label>
+                                <textarea class="form-control @error('editForm.post_biography') is-invalid @enderror" rows="3" placeholder="Why are funds needed?" wire:model.defer="editForm.post_biography"></textarea>
+                                @error('editForm.post_biography')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Hardship tags</label>
+                            <select class="form-select @error('editForm.hardship_ids') is-invalid @enderror" multiple size="4" wire:model.defer="editForm.hardship_ids">
+                                @forelse ($availableTags as $tag)
+                                    <option value="{{ $tag->id }}">{{ $tag->name }}</option>
+                                @empty
+                                    <option disabled>No tags available</option>
+                                @endforelse
+                            </select>
+                            <div class="form-text">These tags help donors find relevant recipients.</div>
+                            @error('editForm.hardship_ids')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
+
                     @php
                         $userPost = $selectedUserMetrics['post'] ?? null;
                     @endphp
@@ -299,6 +372,14 @@
                                 <span class="text-muted">(USD {{ number_format($selectedUserMetrics['donations_total'] ?? 0, 2) }})</span>
                             </dd>
 
+                            <dt class="col-5 text-muted">Location</dt>
+                            <dd class="col-7">{{ $selectedUserMetrics['location'] ?? '—' }}</dd>
+
+                            @if (!empty($selectedUserMetrics['profile_description']))
+                                <dt class="col-5 text-muted">Profile intro</dt>
+                                <dd class="col-7">{{ \Illuminate\Support\Str::limit($selectedUserMetrics['profile_description'], 120) }}</dd>
+                            @endif
+
                             <dt class="col-5 text-muted">Receiver status</dt>
                             <dd class="col-7">
                                 @if (optional($userPost)->activity === 1)
@@ -309,6 +390,16 @@
                                     Not requesting assistance
                                 @endif
                             </dd>
+
+                            @if (!empty($userPost['biography']))
+                                <dt class="col-5 text-muted">Story</dt>
+                                <dd class="col-7">{{ \Illuminate\Support\Str::limit($userPost['biography'], 120) }}</dd>
+                            @endif
+
+                            @if (!empty($userPost['tags']))
+                                <dt class="col-5 text-muted">Hardships</dt>
+                                <dd class="col-7">{{ implode(', ', $userPost['tags']) }}</dd>
+                            @endif
                         </dl>
                     </div>
 

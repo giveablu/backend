@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +37,13 @@ class AdminUser extends Component
         'status' => 'active',
         'email_verified' => false,
         'phone_verified' => false,
+        'profile_description' => '',
+        'country' => '',
+        'region' => '',
+        'city' => '',
+        'post_amount' => '',
+        'post_biography' => '',
+        'hardship_ids' => [],
     ];
 
     public array $selectedUserMetrics = [];
@@ -99,6 +108,9 @@ class AdminUser extends Component
         $this->selectedUserId = $user->id;
         $this->showUserDrawer = true;
 
+        $user->loadMissing(['post.tags']);
+
+        $post = $user->post;
         $this->editForm = [
             'name' => $user->name,
             'email' => $user->email,
@@ -107,6 +119,13 @@ class AdminUser extends Component
             'status' => $user->status ?? 'active',
             'email_verified' => (bool) $user->email_verified_at,
             'phone_verified' => (bool) $user->phone_verified_at,
+            'profile_description' => $user->profile_description ?? '',
+            'country' => $user->country ?? '',
+            'region' => $user->region ?? '',
+            'city' => $user->city ?? '',
+            'post_amount' => $post->amount ?? '',
+            'post_biography' => $post->biography ?? '',
+            'hardship_ids' => $post?->tags->pluck('id')->all() ?? [],
         ];
 
         $this->selectedUserMetrics = $this->buildMetrics($user);
@@ -125,6 +144,13 @@ class AdminUser extends Component
             'status' => 'active',
             'email_verified' => false,
             'phone_verified' => false,
+            'profile_description' => '',
+            'country' => '',
+            'region' => '',
+            'city' => '',
+            'post_amount' => '',
+            'post_biography' => '',
+            'hardship_ids' => [],
         ];
     }
 
@@ -138,7 +164,7 @@ class AdminUser extends Component
             ->where('role', '!=', 'admin')
             ->findOrFail($this->selectedUserId);
 
-        $this->validate([
+        $rules = [
             'editForm.name' => ['required', 'string', 'max:255'],
             'editForm.email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'editForm.phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->ignore($user->id)],
@@ -146,7 +172,27 @@ class AdminUser extends Component
             'editForm.status' => ['required', Rule::in(['active', 'suspended'])],
             'editForm.email_verified' => ['boolean'],
             'editForm.phone_verified' => ['boolean'],
-        ]);
+        ];
+
+        if (($this->editForm['role'] ?? null) === 'receiver') {
+            $rules = array_merge($rules, [
+                'editForm.profile_description' => ['nullable', 'string', 'max:1000'],
+                'editForm.country' => ['nullable', 'string', 'max:150'],
+                'editForm.region' => ['nullable', 'string', 'max:150'],
+                'editForm.city' => ['nullable', 'string', 'max:150'],
+                'editForm.post_amount' => ['nullable', 'string', 'max:10'],
+                'editForm.post_biography' => ['nullable', 'string', 'max:500'],
+                'editForm.hardship_ids' => ['nullable', 'array'],
+                'editForm.hardship_ids.*' => ['integer', Rule::exists('tags', 'id')],
+            ]);
+        }
+
+        $this->validate($rules);
+
+        $profileDescription = $this->sanitizeNullableString($this->editForm['profile_description'] ?? null);
+        $country = $this->sanitizeNullableString($this->editForm['country'] ?? null);
+        $region = $this->sanitizeNullableString($this->editForm['region'] ?? null);
+        $city = $this->sanitizeNullableString($this->editForm['city'] ?? null);
 
         $user->forceFill([
             'name' => $this->editForm['name'],
@@ -154,6 +200,10 @@ class AdminUser extends Component
             'phone' => $this->editForm['phone'],
             'role' => $this->editForm['role'],
             'status' => $this->editForm['status'],
+            'profile_description' => $profileDescription,
+            'country' => $country,
+            'region' => $region,
+            'city' => $city,
         ]);
 
         $user->email_verified_at = $this->editForm['email_verified'] ? ($user->email_verified_at ?? now()) : null;
@@ -164,6 +214,54 @@ class AdminUser extends Component
         $this->editForm['email_verified'] = (bool) $user->email_verified_at;
         $this->editForm['phone_verified'] = (bool) $user->phone_verified_at;
         $this->selectedUserMetrics = $this->buildMetrics($user);
+
+    $this->editForm['profile_description'] = $profileDescription ?? '';
+    $this->editForm['country'] = $country ?? '';
+    $this->editForm['region'] = $region ?? '';
+    $this->editForm['city'] = $city ?? '';
+
+        if ($user->role === 'receiver') {
+            $postAmount = $this->sanitizeNullableString($this->editForm['post_amount'] ?? null);
+            $postBiography = $this->sanitizeNullableString($this->editForm['post_biography'] ?? null);
+            $hardshipIds = collect($this->editForm['hardship_ids'] ?? [])
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+
+            $hasPostContent = $postAmount !== null || $postBiography !== null || !empty($hardshipIds);
+
+            if ($hasPostContent) {
+                $post = Post::firstOrNew(['user_id' => $user->id]);
+                $post->amount = $postAmount;
+                $post->biography = $postBiography;
+                $post->save();
+                $post->tags()->sync($hardshipIds);
+            } elseif ($user->post) {
+                $user->post->tags()->sync([]);
+                $user->post->update([
+                    'amount' => null,
+                    'biography' => null,
+                ]);
+            }
+
+            $this->editForm['post_amount'] = $postAmount ?? '';
+            $this->editForm['post_biography'] = $postBiography ?? '';
+            $this->editForm['hardship_ids'] = $hardshipIds;
+        } else {
+            if ($user->post) {
+                $user->post->tags()->sync([]);
+            }
+
+            $this->editForm['profile_description'] = '';
+            $this->editForm['country'] = '';
+            $this->editForm['region'] = '';
+            $this->editForm['city'] = '';
+            $this->editForm['post_amount'] = '';
+            $this->editForm['post_biography'] = '';
+            $this->editForm['hardship_ids'] = [];
+        }
 
         session()->flash('message', 'User details updated.');
         $this->dispatch('user-message');
@@ -214,6 +312,7 @@ class AdminUser extends Component
         return view('livewire.admin.admin-user', [
             'users' => $users,
             'summary' => $summary,
+            'availableTags' => Tag::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -284,6 +383,7 @@ class AdminUser extends Component
             ->first();
 
         $post = $user->post()
+            ->with('tags:id,name')
             ->select($this->resolvePostMetricsColumns())
             ->first();
 
@@ -291,6 +391,10 @@ class AdminUser extends Component
 
         if (is_array($postData) && ! array_key_exists('activity', $postData)) {
             $postData['activity'] = null;
+        }
+
+        if (is_array($postData)) {
+            $postData['tags'] = $post?->tags->pluck('name')->all();
         }
 
         return [
@@ -305,12 +409,14 @@ class AdminUser extends Component
             'donations_total' => (float) ($donationStats->total ?? 0),
             'post' => $postData,
             'is_online' => $lastLogin ? $lastLogin->greaterThanOrEqualTo(now()->subMinutes(10)) : false,
+            'location' => collect([$user->city, $user->region, $user->country])->filter()->implode(', '),
+            'profile_description' => $user->profile_description,
         ];
     }
 
     protected function resolvePostMetricsColumns(): array
     {
-        $columns = ['paid', 'amount'];
+        $columns = ['user_id', 'paid', 'amount', 'biography'];
 
         if (Schema::hasColumn('posts', 'activity')) {
             $columns[] = 'activity';
@@ -332,5 +438,17 @@ class AdminUser extends Component
         }
 
         return $columns;
+    }
+
+    protected function sanitizeNullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $string = is_string($value) ? $value : (string) $value;
+        $trimmed = trim($string);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }
