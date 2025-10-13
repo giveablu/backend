@@ -22,10 +22,11 @@ class DonorHomeController extends Controller
     {
         $user = $request->user()->load('donorPreference');
 
-        $excludedPostIds = $user->deleteds()->pluck('post_id');
+        $includeSkipped = $request->boolean('include_skipped');
+        $excludedPostIds = $includeSkipped ? collect() : $user->deleteds()->pluck('post_id');
 
         $baseQuery = Post::query()
-            ->whereNotIn('id', $excludedPostIds)
+            ->when($excludedPostIds->isNotEmpty(), fn ($builder) => $builder->whereNotIn('id', $excludedPostIds))
             ->whereHas('user', fn ($builder) => $builder->where('role', 'receiver'))
             ->with(['user', 'tags']);
 
@@ -59,10 +60,16 @@ class DonorHomeController extends Controller
         $posts = $query->inRandomOrder()->paginate(4);
 
         if ($posts->count() > 0) {
-            return DonorHomeResource::collection($posts)->additional([
+            $additional = [
                 'response' => true,
-                'message' => ['Donor Home']
-            ]);
+                'message' => [$includeSkipped ? 'Showing recipients you previously skipped.' : 'Donor Home'],
+            ];
+
+            if ($includeSkipped) {
+                $additional['preference_status'] = 'revisit';
+            }
+
+            return DonorHomeResource::collection($posts)->additional($additional);
         }
 
         if ($preference && $hasActivePreference) {
@@ -84,8 +91,10 @@ class DonorHomeController extends Controller
         }
 
         return response()->json([
-            'response' => false,
-            'message' => ['No Donation Found'],
+            'response' => $includeSkipped,
+            'message' => $includeSkipped
+                ? ['No new recipients right now. Showing previously skipped recipients instead.']
+                : ['No Donation Found'],
             'data' => [],
         ]);
     }
