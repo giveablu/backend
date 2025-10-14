@@ -280,21 +280,82 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label">Country</label>
-                                <input type="text" class="form-control @error('editForm.country') is-invalid @enderror" placeholder="e.g. Kenya" wire:model.defer="editForm.country">
+                                <input
+                                    type="text"
+                                    class="form-control @error('editForm.country') is-invalid @enderror"
+                                    placeholder="Search country"
+                                    list="admin-country-options"
+                                    wire:model.live="countryInput"
+                                >
+                                <datalist id="admin-country-options">
+                                    @foreach ($countryOptions as $option)
+                                        <option value="{{ $option['name'] }}">{{ $option['name'] }}</option>
+                                    @endforeach
+                                </datalist>
+                                <div class="form-text">
+                                    @if ($editForm['country_code'] ?? false)
+                                        Matched code: {{ $editForm['country_code'] }}
+                                    @else
+                                        Type to search or enter a custom country.
+                                    @endif
+                                </div>
                                 @error('editForm.country')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Region / State</label>
-                                <input type="text" class="form-control @error('editForm.region') is-invalid @enderror" placeholder="e.g. Nairobi County" wire:model.defer="editForm.region">
+                                <input
+                                    type="text"
+                                    class="form-control @error('editForm.region') is-invalid @enderror"
+                                    placeholder="{{ ($editForm['country_code'] ?? '') ? 'Search state or enter manually' : 'Select a country first' }}"
+                                    list="admin-state-options"
+                                    {{ ($editForm['country_code'] ?? '') === '' ? 'disabled' : '' }}
+                                    wire:model.live="stateInput"
+                                >
+                                <datalist id="admin-state-options">
+                                    @foreach ($stateOptions as $option)
+                                        <option value="{{ $option['name'] }}">{{ $option['name'] }}</option>
+                                    @endforeach
+                                </datalist>
+                                <div class="form-text">
+                                    @if (($editForm['country_code'] ?? '') === '')
+                                        Choose a country to load its regions.
+                                    @elseif (($editForm['state_code'] ?? '') !== '')
+                                        Matched code: {{ $editForm['state_code'] }}
+                                    @elseif (empty($stateOptions))
+                                        No catalogued regions for this country; manual entry retained.
+                                    @else
+                                        Start typing to search available regions.
+                                    @endif
+                                </div>
                                 @error('editForm.region')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">City</label>
-                                <input type="text" class="form-control @error('editForm.city') is-invalid @enderror" placeholder="e.g. Nairobi" wire:model.defer="editForm.city">
+                                <input
+                                    type="text"
+                                    class="form-control @error('editForm.city') is-invalid @enderror"
+                                    placeholder="{{ ($editForm['state_code'] ?? '') ? 'Search city or enter manually' : 'Select a region or type freely' }}"
+                                    list="admin-city-options"
+                                    wire:model.live="cityInput"
+                                >
+                                <datalist id="admin-city-options">
+                                    @foreach ($citySuggestions as $option)
+                                        <option value="{{ $option['name'] }}">{{ $option['name'] }}</option>
+                                    @endforeach
+                                </datalist>
+                                <div class="form-text">
+                                    @if (!empty($citySuggestions) && ($editForm['state_code'] ?? '') !== '')
+                                        Showing up to {{ count($citySuggestions) }} suggestions.
+                                    @elseif (($editForm['state_code'] ?? '') !== '')
+                                        Start typing to see matching cities.
+                                    @else
+                                        Enter a city name (suggestions appear after selecting a region).
+                                    @endif
+                                </div>
                                 @error('editForm.city')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

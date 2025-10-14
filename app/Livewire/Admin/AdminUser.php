@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
+use App\Support\LocationOptions;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,9 @@ class AdminUser extends Component
         'phone_verified' => false,
         'profile_description' => '',
         'country' => '',
+        'country_code' => '',
         'region' => '',
+        'state_code' => '',
         'city' => '',
         'post_amount' => '',
         'post_biography' => '',
@@ -47,6 +50,14 @@ class AdminUser extends Component
     ];
 
     public array $selectedUserMetrics = [];
+
+    public array $countryOptions = [];
+    public array $stateOptions = [];
+    public array $citySuggestions = [];
+
+    public string $countryInput = '';
+    public string $stateInput = '';
+    public string $cityInput = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -63,6 +74,11 @@ class AdminUser extends Component
         'editForm.role' => 'role',
         'editForm.status' => 'status',
     ];
+
+    public function mount(): void
+    {
+        $this->countryOptions = LocationOptions::countryOptions();
+    }
 
     public function addUser(): void
     {
@@ -129,6 +145,12 @@ class AdminUser extends Component
         ];
 
         $this->selectedUserMetrics = $this->buildMetrics($user);
+
+        $this->countryInput = $this->editForm['country'] ?? '';
+        $this->stateInput = $this->editForm['region'] ?? '';
+        $this->cityInput = $this->editForm['city'] ?? '';
+
+        $this->syncLocationSelectionsFromInputs();
     }
 
     public function clearSelection(): void
@@ -146,12 +168,19 @@ class AdminUser extends Component
             'phone_verified' => false,
             'profile_description' => '',
             'country' => '',
+            'country_code' => '',
             'region' => '',
+            'state_code' => '',
             'city' => '',
             'post_amount' => '',
             'post_biography' => '',
             'hardship_ids' => [],
         ];
+        $this->countryInput = '';
+        $this->stateInput = '';
+        $this->cityInput = '';
+        $this->stateOptions = [];
+        $this->citySuggestions = [];
     }
 
     public function saveUser(): void
@@ -194,6 +223,8 @@ class AdminUser extends Component
         $region = $this->sanitizeNullableString($this->editForm['region'] ?? null);
         $city = $this->sanitizeNullableString($this->editForm['city'] ?? null);
 
+        [$country, $region, $city] = $this->resolveLocationValues($country, $region, $city);
+
         $user->forceFill([
             'name' => $this->editForm['name'],
             'email' => $this->editForm['email'],
@@ -215,10 +246,10 @@ class AdminUser extends Component
         $this->editForm['phone_verified'] = (bool) $user->phone_verified_at;
         $this->selectedUserMetrics = $this->buildMetrics($user);
 
-    $this->editForm['profile_description'] = $profileDescription ?? '';
-    $this->editForm['country'] = $country ?? '';
-    $this->editForm['region'] = $region ?? '';
-    $this->editForm['city'] = $city ?? '';
+        $this->editForm['profile_description'] = $profileDescription ?? '';
+        $this->editForm['country'] = $country ?? '';
+        $this->editForm['region'] = $region ?? '';
+        $this->editForm['city'] = $city ?? '';
 
         if ($user->role === 'receiver') {
             $postAmount = $this->sanitizeNullableString($this->editForm['post_amount'] ?? null);
@@ -265,6 +296,94 @@ class AdminUser extends Component
 
         session()->flash('message', 'User details updated.');
         $this->dispatch('user-message');
+
+        $this->syncLocationSelectionsFromInputs();
+    }
+
+    public function updatedCountryInput(string $value): void
+    {
+        $match = LocationOptions::matchCountry($value);
+
+        if ($match) {
+            $previousCountry = $this->editForm['country_code'] ?? '';
+            $this->editForm['country_code'] = $match['code'];
+            $this->editForm['country'] = $match['name'];
+            $this->countryInput = $match['name'];
+
+            if (mb_strtoupper($previousCountry) !== mb_strtoupper($match['code'])) {
+                $this->stateOptions = LocationOptions::stateOptions($match['code']);
+                $this->editForm['state_code'] = '';
+                $this->stateInput = '';
+                $this->editForm['region'] = '';
+                $this->cityInput = '';
+                $this->editForm['city'] = '';
+                $this->citySuggestions = [];
+            }
+        } else {
+            $this->editForm['country_code'] = '';
+            $this->editForm['country'] = $value;
+            $this->stateOptions = [];
+            $this->editForm['state_code'] = '';
+            $this->stateInput = '';
+            $this->editForm['region'] = '';
+            $this->cityInput = '';
+            $this->editForm['city'] = '';
+            $this->citySuggestions = [];
+        }
+    }
+
+    public function updatedStateInput(string $value): void
+    {
+        $this->editForm['region'] = $value;
+        $countryCode = $this->editForm['country_code'] ?? '';
+
+        if ($countryCode === '') {
+            $this->editForm['state_code'] = '';
+            $this->citySuggestions = [];
+            return;
+        }
+
+        $match = LocationOptions::matchState($countryCode, $value);
+
+        if ($match) {
+            $this->editForm['state_code'] = $match['code'];
+            $this->stateInput = $match['name'];
+            $this->editForm['region'] = $match['name'];
+            $this->stateOptions = LocationOptions::stateOptions($countryCode);
+            $this->citySuggestions = LocationOptions::cityOptions($countryCode, $match['code'], 50);
+
+            $cityMatch = LocationOptions::matchCity($countryCode, $match['code'], $this->cityInput);
+            if ($cityMatch) {
+                $this->cityInput = $cityMatch['name'];
+                $this->editForm['city'] = $cityMatch['name'];
+            } elseif ($this->cityInput !== '') {
+                $this->cityInput = '';
+                $this->editForm['city'] = '';
+            }
+        } else {
+            $this->editForm['state_code'] = '';
+            $this->citySuggestions = [];
+        }
+    }
+
+    public function updatedCityInput(string $value): void
+    {
+        $this->editForm['city'] = $value;
+        $countryCode = $this->editForm['country_code'] ?? '';
+        $stateCode = $this->editForm['state_code'] ?? '';
+
+        if ($countryCode === '' || $stateCode === '') {
+            $this->citySuggestions = [];
+            return;
+        }
+
+        $match = LocationOptions::matchCity($countryCode, $stateCode, $value);
+        if ($match) {
+            $this->cityInput = $match['name'];
+            $this->editForm['city'] = $match['name'];
+        }
+
+        $this->citySuggestions = LocationOptions::searchCities($countryCode, $stateCode, $value, 25);
     }
 
     public function toggleStatus(): void
@@ -450,5 +569,77 @@ class AdminUser extends Component
         $trimmed = trim($string);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    protected function resolveLocationValues(?string $country, ?string $region, ?string $city): array
+    {
+        $countryCode = $this->editForm['country_code'] ?? '';
+        $stateCode = $this->editForm['state_code'] ?? '';
+
+        if ($countryCode !== '') {
+            $matchedCountry = LocationOptions::findCountryByCode($countryCode);
+            if ($matchedCountry) {
+                $country = $matchedCountry['name'];
+                $this->countryInput = $matchedCountry['name'];
+                $this->editForm['country'] = $matchedCountry['name'];
+            }
+        }
+
+        if ($countryCode !== '' && $stateCode !== '') {
+            $matchedState = LocationOptions::findStateByCode($countryCode, $stateCode);
+            if ($matchedState) {
+                $region = $matchedState['name'];
+                $this->stateInput = $matchedState['name'];
+                $this->editForm['region'] = $matchedState['name'];
+            }
+
+            if ($city !== null && $city !== '') {
+                $matchedCity = LocationOptions::matchCity($countryCode, $stateCode, $city);
+                if ($matchedCity) {
+                    $city = $matchedCity['name'];
+                    $this->cityInput = $matchedCity['name'];
+                }
+            }
+        }
+
+        return [$country, $region, $city];
+    }
+
+    protected function syncLocationSelectionsFromInputs(): void
+    {
+        $this->stateOptions = [];
+        $this->citySuggestions = [];
+
+        if ($this->countryInput !== '') {
+            $match = LocationOptions::matchCountry($this->countryInput);
+            if ($match) {
+                $this->editForm['country_code'] = $match['code'];
+                $this->editForm['country'] = $match['name'];
+                $this->countryInput = $match['name'];
+                $this->stateOptions = LocationOptions::stateOptions($match['code']);
+
+                if ($this->stateInput !== '') {
+                    $stateMatch = LocationOptions::matchState($match['code'], $this->stateInput);
+                    if ($stateMatch) {
+                        $this->editForm['state_code'] = $stateMatch['code'];
+                        $this->editForm['region'] = $stateMatch['name'];
+                        $this->stateInput = $stateMatch['name'];
+                        $this->citySuggestions = LocationOptions::cityOptions($match['code'], $stateMatch['code'], 50);
+
+                        if ($this->cityInput !== '') {
+                            $cityMatch = LocationOptions::matchCity($match['code'], $stateMatch['code'], $this->cityInput);
+                            if ($cityMatch) {
+                                $this->cityInput = $cityMatch['name'];
+                                $this->editForm['city'] = $cityMatch['name'];
+                            }
+                        }
+                    } else {
+                        $this->editForm['state_code'] = '';
+                    }
+                }
+            } else {
+                $this->editForm['country_code'] = '';
+            }
+        }
     }
 }
