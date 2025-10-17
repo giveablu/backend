@@ -18,6 +18,14 @@ trait InteractsWithSocialProviders
 
         $driver = Socialite::driver($driverName);
 
+        if ($provider === SocialProvider::Facebook && method_exists($driver, 'usingGraphVersion')) {
+            $graphVersion = config('services.facebook.graph_version');
+
+            if (is_string($graphVersion) && $graphVersion !== '') {
+                $driver->usingGraphVersion($graphVersion);
+            }
+        }
+
         if ($redirectUri && $provider !== SocialProvider::X && method_exists($driver, 'redirectUrl')) {
             $driver->redirectUrl($redirectUri);
         }

@@ -25,6 +25,7 @@ Add the following keys to `.env` and populate with real provider credentials whe
 SOCIAL_FACEBOOK_CLIENT_ID=
 SOCIAL_FACEBOOK_CLIENT_SECRET=
 SOCIAL_FACEBOOK_REDIRECT_URI=
+SOCIAL_FACEBOOK_GRAPH_VERSION=
 
 SOCIAL_INSTAGRAM_CLIENT_ID=
 SOCIAL_INSTAGRAM_CLIENT_SECRET=
@@ -47,6 +48,7 @@ The backend `.env.example` now ships with descriptive placeholder values so the 
 SOCIAL_FACEBOOK_CLIENT_ID=fb-client-id-demo
 SOCIAL_FACEBOOK_CLIENT_SECRET=fb-client-secret-demo
 SOCIAL_FACEBOOK_REDIRECT_URI=http://localhost:3000/auth/social/callback
+SOCIAL_FACEBOOK_GRAPH_VERSION=v24.0
 
 SOCIAL_INSTAGRAM_CLIENT_ID=ig-client-id-demo
 SOCIAL_INSTAGRAM_CLIENT_SECRET=ig-client-secret-demo
@@ -69,6 +71,18 @@ Replace these with production credentials before running end-to-end OAuth flows 
 - Store client IDs and secrets in environment variables (`SOCIAL_{PROVIDER}_CLIENT_ID`, `SOCIAL_{PROVIDER}_CLIENT_SECRET`, `SOCIAL_{PROVIDER}_REDIRECT_URI`).
 - Undergo provider app reviews for scopes beyond basic profile data (Meta App Review, X elevated plan, Google OAuth consent publishing).
 - Terms of Service / Privacy Policy URLs must be shared with every provider.
+
+#### Facebook specifics
+
+- In the Meta App Dashboard, open **Facebook Login → Settings** and enable both **Client OAuth Login** and **Web OAuth Login**.
+- Under **Valid OAuth Redirect URIs**, add every environment exactly as it will appear in the browser (no query strings or trailing slashes). At minimum include:
+  - `http://localhost:3000/auth/social/callback` (local development)
+  - `https://blu.gives/auth/social/callback` (production web)
+  - `https://www.blu.gives/auth/social/callback` (if the `www` alias is live)
+  - `https://staging.blu.gives/auth/social/callback` (or any staging domain you expose to testers)
+- In **Settings → Basic**, add your domains (for example `blu.gives`, `www.blu.gives`) to **App Domains** and set the **Website URL** to the corresponding site (`https://blu.gives`).
+- Save the changes and, if you rotate secrets, remember to redeploy with updated `SOCIAL_FACEBOOK_*` values followed by `php artisan config:clear`.
+- The Laravel Socialite driver is now configured via `SOCIAL_FACEBOOK_GRAPH_VERSION`. Set it to the version Meta mandates (currently `v24.0`) so backend requests line up with your app dashboard.
 
 #### X (Twitter) specifics
 

@@ -40,6 +40,7 @@ return [
         'client_id' => env('SOCIAL_FACEBOOK_CLIENT_ID'),
         'client_secret' => env('SOCIAL_FACEBOOK_CLIENT_SECRET'),
         'redirect' => env('SOCIAL_FACEBOOK_REDIRECT_URI'),
+        'graph_version' => env('SOCIAL_FACEBOOK_GRAPH_VERSION', 'v24.0'),
     ],
 
     'instagram' => [
