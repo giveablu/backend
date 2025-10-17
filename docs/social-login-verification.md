@@ -73,7 +73,7 @@ Replace these with production credentials before running end-to-end OAuth flows 
 #### X (Twitter) specifics
 
 - Create a project + app in the [X Developer Portal](https://developer.twitter.com/) with Elevated access so email and follower metadata can be returned.
-- Under **User authentication settings**, enable OAuth 2.0 and OAuth 1.0a. Set the callback URL to your frontend handler (for example `https://app.blu.gives/auth/social/callback`) and add your local URL (`http://localhost:3000/auth/social/callback`) while developing.
+- Under **User authentication settings**, enable OAuth 2.0 and OAuth 1.0a. Set the callback URL to your frontend handler (for example `https://blu.gives/auth/social/callback`) and add your local URL (`http://localhost:3000/auth/social/callback`) while developing.
 - Record the **Client ID**, **Client Secret**, and (if using OAuth 1.0a) the **API Key** and **API Key Secret**; the Socialite Twitter driver will use the OAuth 1.0a credentials while the client ID/secret power OAuth 2.0 scoped calls.
 - Add the following scopes/permissions: `tweet.read`, `users.read`, and request **Read** access; enable the "Request email address" toggle so we can fetch the user's email via the `include_email=true` parameter.
 - Update `.env` in every environment with `SOCIAL_X_CLIENT_ID`, `SOCIAL_X_CLIENT_SECRET`, and `SOCIAL_X_REDIRECT_URI`. Remember to clear the config cache (`php artisan config:clear`) after deploying.
