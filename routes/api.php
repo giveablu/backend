@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\Receiver\ReceiverNotificationController;
 use App\Http\Controllers\Api\Profile\LinkedSocialAccountController;
 use App\Http\Controllers\Api\Profile\SocialAccountController as ProfileSocialAccountController;
 use App\Http\Controllers\Api\ImpactController;
+use App\Http\Controllers\Webhooks\MetaWebhookController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return new UserResource($request->user());
@@ -155,6 +156,11 @@ Route::get('paypal/cancel', [PaypalPayment::class, 'cancel']);
 use App\Http\Controllers\PaypalController;
 Route::post('/paypal/create-order', [PaypalController::class, 'createOrder']);
 Route::post('/paypal/capture-order', [PaypalController::class, 'captureOrder']);
+
+Route::prefix('meta')->group(function () {
+    Route::get('webhook', [MetaWebhookController::class, 'verify']);
+    Route::post('webhook', [MetaWebhookController::class, 'handle']);
+});
 
 Route::middleware(['auth:sanctum', 'adminauth'])->prefix('admin')->group(function () {
     Route::get('users/{user}/social', [AdminUserSocialController::class, 'index']);

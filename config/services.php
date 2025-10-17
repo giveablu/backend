@@ -46,6 +46,7 @@ return [
         'client_id' => env('SOCIAL_INSTAGRAM_CLIENT_ID'),
         'client_secret' => env('SOCIAL_INSTAGRAM_CLIENT_SECRET'),
         'redirect' => env('SOCIAL_INSTAGRAM_REDIRECT_URI'),
+        'verify_token' => env('INSTAGRAM_VERIFY_TOKEN'),
     ],
 
     'twitter' => [
