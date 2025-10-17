@@ -75,6 +75,7 @@ trait InteractsWithSocialProviders
     {
         return match ($provider) {
             SocialProvider::Instagram => ['response_type' => 'code'],
+            SocialProvider::X => ['include_email' => 'true'],
             default => [],
         };
     }
