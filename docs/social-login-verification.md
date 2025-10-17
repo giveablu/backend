@@ -30,6 +30,7 @@ SOCIAL_FACEBOOK_GRAPH_VERSION=
 SOCIAL_INSTAGRAM_CLIENT_ID=
 SOCIAL_INSTAGRAM_CLIENT_SECRET=
 SOCIAL_INSTAGRAM_REDIRECT_URI=
+SOCIAL_INSTAGRAM_GRAPH_VERSION=
 
 SOCIAL_X_CLIENT_ID=
 SOCIAL_X_CLIENT_SECRET=
@@ -53,6 +54,7 @@ SOCIAL_FACEBOOK_GRAPH_VERSION=v24.0
 SOCIAL_INSTAGRAM_CLIENT_ID=ig-client-id-demo
 SOCIAL_INSTAGRAM_CLIENT_SECRET=ig-client-secret-demo
 SOCIAL_INSTAGRAM_REDIRECT_URI=http://localhost:3000/auth/social/callback
+SOCIAL_INSTAGRAM_GRAPH_VERSION=v24.0
 
 SOCIAL_X_CLIENT_ID=x-client-id-demo
 SOCIAL_X_CLIENT_SECRET=x-client-secret-demo
@@ -83,6 +85,12 @@ Replace these with production credentials before running end-to-end OAuth flows 
 - In **Settings → Basic**, add your domains (for example `blu.gives`, `www.blu.gives`) to **App Domains** and set the **Website URL** to the corresponding site (`https://blu.gives`).
 - Save the changes and, if you rotate secrets, remember to redeploy with updated `SOCIAL_FACEBOOK_*` values followed by `php artisan config:clear`.
 - The Laravel Socialite driver is now configured via `SOCIAL_FACEBOOK_GRAPH_VERSION`. Set it to the version Meta mandates (currently `v24.0`) so backend requests line up with your app dashboard.
+
+#### Instagram specifics
+
+- Instagram Basic Display also requires you to track Meta’s rolling version. Set `SOCIAL_INSTAGRAM_GRAPH_VERSION` to the current release (`v24.0` today) so the backend calls `https://graph.instagram.com/v24.0/...`.
+- If you enable the Instagram Test Users feature, add the same redirect URIs under **Instagram Basic Display → Client OAuth Settings**.
+- Meta sometimes delays provisioning of Basic Display testers—invite real accounts under **Roles → Instagram Testers** and have each user accept from the Instagram app if the tester wizard is unavailable.
 
 #### X (Twitter) specifics
 

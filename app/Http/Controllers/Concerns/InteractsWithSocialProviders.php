@@ -18,12 +18,14 @@ trait InteractsWithSocialProviders
 
         $driver = Socialite::driver($driverName);
 
-        if ($provider === SocialProvider::Facebook && method_exists($driver, 'usingGraphVersion')) {
-            $graphVersion = config('services.facebook.graph_version');
+        $graphVersion = match ($provider) {
+            SocialProvider::Facebook => config('services.facebook.graph_version'),
+            SocialProvider::Instagram => config('services.instagram.graph_version'),
+            default => null,
+        };
 
-            if (is_string($graphVersion) && $graphVersion !== '') {
-                $driver->usingGraphVersion($graphVersion);
-            }
+        if (is_string($graphVersion) && $graphVersion !== '' && method_exists($driver, 'usingGraphVersion')) {
+            $driver->usingGraphVersion($graphVersion);
         }
 
         if ($redirectUri && $provider !== SocialProvider::X && method_exists($driver, 'redirectUrl')) {
