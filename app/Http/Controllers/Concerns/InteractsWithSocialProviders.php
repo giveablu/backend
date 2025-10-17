@@ -11,9 +11,14 @@ trait InteractsWithSocialProviders
     protected function buildDriver(SocialProvider $provider, ?string $redirectUri): Provider
     {
         $driverName = $this->driverName($provider);
+
+        if ($provider === SocialProvider::X && $redirectUri) {
+            config(['services.twitter.redirect' => $redirectUri]);
+        }
+
         $driver = Socialite::driver($driverName);
 
-        if ($redirectUri) {
+        if ($redirectUri && $provider !== SocialProvider::X && method_exists($driver, 'redirectUrl')) {
             $driver->redirectUrl($redirectUri);
         }
 
