@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\SocialVerificationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +60,9 @@ class User extends Authenticatable
         'reset_otp_expires_at',
         'reset_token',
         'reset_token_expires_at',
+        'social_verification_status',
+        'social_verified_at',
+        'social_verification_notes',
     ];
 
     /**
@@ -86,6 +90,8 @@ class User extends Authenticatable
         'password' => 'hashed',
         'reset_otp_expires_at' => 'datetime',
         'reset_token_expires_at' => 'datetime',
+        'social_verified_at' => 'datetime',
+        'social_verification_status' => SocialVerificationStatus::class,
     ];
 
     public function post(): HasOne
@@ -126,6 +132,21 @@ class User extends Authenticatable
     public function donorPreference(): HasOne
     {
         return $this->hasOne(DonorPreference::class);
+    }
+
+    public function social(): HasOne
+    {
+        return $this->hasOne(UserSocial::class)->where('is_primary', true);
+    }
+
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(UserSocial::class);
+    }
+
+    public function socialVerificationEvents(): HasMany
+    {
+        return $this->hasMany(SocialVerificationEvent::class);
     }
 
     protected static function formatSearchId(int $id): string

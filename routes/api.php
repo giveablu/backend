@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\Other\SendDataController;
 use App\Http\Controllers\Api\Auth\ForgotPassController; // 🎯 This handles password reset
 use App\Http\Controllers\Api\Auth\AuthController; // 🎯 This handles general auth
 use App\Http\Controllers\Api\Donor\DonorHomeController;
+use App\Http\Controllers\Api\Admin\UserSocialController as AdminUserSocialController;
+use App\Http\Controllers\Api\Auth\SocialAuthController;
 use App\Http\Controllers\Api\Auth\SocialLoginController;
 use App\Http\Controllers\Api\Donor\DonorPaymentController;
 use App\Http\Controllers\Api\Donor\DonorProfileController;
@@ -23,6 +25,8 @@ use App\Http\Controllers\Api\Receiver\ReceiverBalanceController;
 use App\Http\Controllers\Api\Receiver\ReceiverProfileController;
 use App\Http\Controllers\Api\Receiver\ReceiverWithdrawController;
 use App\Http\Controllers\Api\Receiver\ReceiverNotificationController;
+use App\Http\Controllers\Api\Profile\LinkedSocialAccountController;
+use App\Http\Controllers\Api\Profile\SocialAccountController as ProfileSocialAccountController;
 use App\Http\Controllers\Api\ImpactController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -41,6 +45,8 @@ Route::prefix('auth')->group(function () {
     Route::post('resend-otp', [OtpVerifyController::class, 'resendOtp']);
     Route::post('sign-in', [LoginController::class, 'login']);
     Route::post('social-login', [SocialLoginController::class, 'donorSocialLogin']);
+    Route::post('social/{role}/{provider}/redirect', [SocialAuthController::class, 'redirect']);
+    Route::post('social/{role}/{provider}/callback', [SocialAuthController::class, 'callback']);
     
     // 🎯 PASSWORD RESET - All handled by ForgotPassController ONLY
     Route::post('forgot-password', [ForgotPassController::class, 'forgotPass']);
@@ -93,6 +99,13 @@ Route::group(['middleware' => 'auth:sanctum', 'prefix' => 'donor-account'], func
 });
 
 Route::group(['middleware' => 'auth:sanctum'], function () {
+    Route::prefix('profile/social')->group(function () {
+        Route::get('/', [ProfileSocialAccountController::class, 'index']);
+        Route::post('{provider}/redirect', [LinkedSocialAccountController::class, 'redirect']);
+        Route::post('{provider}/callback', [LinkedSocialAccountController::class, 'callback']);
+        Route::delete('{social}', [ProfileSocialAccountController::class, 'destroy']);
+    });
+
     Route::get('faqs', [DonorHomeController::class, 'faqs']);
 });
 
@@ -142,3 +155,8 @@ Route::get('paypal/cancel', [PaypalPayment::class, 'cancel']);
 use App\Http\Controllers\PaypalController;
 Route::post('/paypal/create-order', [PaypalController::class, 'createOrder']);
 Route::post('/paypal/capture-order', [PaypalController::class, 'captureOrder']);
+
+Route::middleware(['auth:sanctum', 'adminauth'])->prefix('admin')->group(function () {
+    Route::get('users/{user}/social', [AdminUserSocialController::class, 'index']);
+    Route::patch('users/{user}/social/{social}', [AdminUserSocialController::class, 'update']);
+});
