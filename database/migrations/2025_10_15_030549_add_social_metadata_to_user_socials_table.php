@@ -133,8 +133,48 @@ return new class extends Migration
      */
     private function indexExists(string $table, string $index): bool
     {
-        $result = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$index]);
+        $connection = Schema::getConnection();
+        $driver = $connection->getDriverName();
+        $prefixedTable = $connection->getTablePrefix() . $table;
 
-        return ! empty($result);
+        if ($driver === 'sqlite') {
+            $sanitizedTable = str_replace("'", "''", $prefixedTable);
+            $results = $connection->select("PRAGMA index_list('{$sanitizedTable}')");
+
+            foreach ($results as $row) {
+                if (($row->name ?? null) === $index) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $wrappedTable = $connection->getQueryGrammar()->wrapTable($prefixedTable);
+            $results = $connection->select("SHOW INDEX FROM {$wrappedTable} WHERE Key_name = ?", [$index]);
+
+            return ! empty($results);
+        }
+
+        if ($driver === 'pgsql') {
+            $results = $connection->select(
+                'SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?',
+                [$prefixedTable, $index]
+            );
+
+            return ! empty($results);
+        }
+
+        if ($driver === 'sqlsrv') {
+            $results = $connection->select(
+                'SELECT ind.name FROM sys.indexes ind INNER JOIN sys.tables t ON ind.object_id = t.object_id WHERE t.name = ? AND ind.name = ?',
+                [$prefixedTable, $index]
+            );
+
+            return ! empty($results);
+        }
+
+        return false;
     }
 };
