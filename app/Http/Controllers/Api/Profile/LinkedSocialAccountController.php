@@ -49,6 +49,10 @@ class LinkedSocialAccountController extends Controller
             ]
         );
 
+        if (method_exists($driver, 'forState')) {
+            $driver->forState($state);
+        }
+
         $redirectResponse = $driver->with(['state' => $state])->redirect();
 
         return response()->json([
@@ -66,11 +70,19 @@ class LinkedSocialAccountController extends Controller
         $user = $request->user();
         $enumProvider = $this->resolveProviderForRole($provider, $user->role);
 
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'state' => ['required', 'string'],
-            'code' => ['required', 'string'],
             'redirect_uri' => ['required', 'url'],
-        ]);
+        ];
+
+        if ($enumProvider === \App\Enums\SocialProvider::X) {
+            $rules['oauth_token'] = ['required', 'string'];
+            $rules['oauth_verifier'] = ['required', 'string'];
+        } else {
+            $rules['code'] = ['required', 'string'];
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -97,6 +109,18 @@ class LinkedSocialAccountController extends Controller
 
         try {
             $driver = $this->buildDriver($enumProvider, $request->input('redirect_uri'));
+
+            if (method_exists($driver, 'forState')) {
+                $driver->forState($request->input('state'));
+            }
+
+            if ($enumProvider === \App\Enums\SocialProvider::X) {
+                $request->merge([
+                    'oauth_token' => $request->input('oauth_token'),
+                    'oauth_verifier' => $request->input('oauth_verifier'),
+                ]);
+            }
+
             $oauthUser = $driver->user();
 
             $result = $this->accountService->handleAuthentication(

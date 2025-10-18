@@ -18,6 +18,12 @@ trait InteractsWithSocialProviders
 
         $driver = Socialite::driver($driverName);
 
+        if ($provider === SocialProvider::X) {
+            if (method_exists($driver, 'usingStateManager')) {
+                $driver->usingStateManager($this->stateManager);
+            }
+        }
+
         $graphVersion = match ($provider) {
             SocialProvider::Facebook => config('services.facebook.graph_version'),
             SocialProvider::Instagram => config('services.instagram.graph_version'),
