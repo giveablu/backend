@@ -52,9 +52,10 @@ return [
     ],
 
     'twitter' => [
-        'client_id' => env('SOCIAL_X_CLIENT_ID'),
-        'client_secret' => env('SOCIAL_X_CLIENT_SECRET'),
+        'client_id' => env('SOCIAL_X_API_KEY', env('SOCIAL_X_CLIENT_ID')),
+        'client_secret' => env('SOCIAL_X_API_SECRET', env('SOCIAL_X_CLIENT_SECRET')),
         'redirect' => env('SOCIAL_X_REDIRECT_URI'),
+        'scope' => env('SOCIAL_X_APP_SCOPE'),
     ],
 
     'google' => [

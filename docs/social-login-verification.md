@@ -35,6 +35,9 @@ SOCIAL_INSTAGRAM_GRAPH_VERSION=
 SOCIAL_X_CLIENT_ID=
 SOCIAL_X_CLIENT_SECRET=
 SOCIAL_X_REDIRECT_URI=
+SOCIAL_X_API_KEY=
+SOCIAL_X_API_SECRET=
+SOCIAL_X_APP_SCOPE=
 
 SOCIAL_GOOGLE_CLIENT_ID=
 SOCIAL_GOOGLE_CLIENT_SECRET=
@@ -59,6 +62,9 @@ SOCIAL_INSTAGRAM_GRAPH_VERSION=v24.0
 SOCIAL_X_CLIENT_ID=x-client-id-demo
 SOCIAL_X_CLIENT_SECRET=x-client-secret-demo
 SOCIAL_X_REDIRECT_URI=http://localhost:3000/auth/social/callback
+SOCIAL_X_API_KEY=x-api-key-demo
+SOCIAL_X_API_SECRET=x-api-secret-demo
+SOCIAL_X_APP_SCOPE=
 
 SOCIAL_GOOGLE_CLIENT_ID=google-client-id-demo.apps.googleusercontent.com
 SOCIAL_GOOGLE_CLIENT_SECRET=google-client-secret-demo
@@ -97,6 +103,8 @@ Replace these with production credentials before running end-to-end OAuth flows 
 - Create a project + app in the [X Developer Portal](https://developer.twitter.com/) with Elevated access so email and follower metadata can be returned.
 - Under **User authentication settings**, enable OAuth 2.0 and OAuth 1.0a. Set the callback URL to your frontend handler (for example `https://blu.gives/auth/social/callback`) and add your local URL (`http://localhost:3000/auth/social/callback`) while developing. Twitter requires an **exact** match, so omit any query parameters when configuring the callback.
 - Record the **Client ID**, **Client Secret**, and (if using OAuth 1.0a) the **API Key** and **API Key Secret**; the Socialite Twitter driver will use the OAuth 1.0a credentials while the client ID/secret power OAuth 2.0 scoped calls.
+- Populate both `SOCIAL_X_API_KEY` / `SOCIAL_X_API_SECRET` (your OAuth 1.0a API Key + API Key Secret) and `SOCIAL_X_CLIENT_ID` / `SOCIAL_X_CLIENT_SECRET` (OAuth 2.0 Client ID + Secret). The Laravel backend defaults to the API key pair for login but falls back to the client credentials if the older keys are missing.
+- If you need to restrict the access level to `read` or `read-write`, set `SOCIAL_X_APP_SCOPE` accordingly (for example `read`); otherwise leave it blank to use the dashboard default.
 - Add the following scopes/permissions: `tweet.read`, `users.read`, and request **Read** access; enable the "Request email address" toggle so we can fetch the user's email via the `include_email=true` parameter.
 - Update `.env` in every environment with `SOCIAL_X_CLIENT_ID`, `SOCIAL_X_CLIENT_SECRET`, and `SOCIAL_X_REDIRECT_URI`. Remember to clear the config cache (`php artisan config:clear`) after deploying.
 
