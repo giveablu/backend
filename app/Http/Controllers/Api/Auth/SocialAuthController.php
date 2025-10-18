@@ -29,8 +29,6 @@ class SocialAuthController extends Controller
 
         $redirectUri = $request->input('redirect_uri');
 
-        $driver = $this->buildDriver($enumProvider, $redirectUri);
-
         $state = $this->stateManager->generateState(
             $enumProvider,
             'login',
@@ -39,6 +37,8 @@ class SocialAuthController extends Controller
                 'redirect_uri' => $redirectUri,
             ]
         );
+
+        $driver = $this->buildDriver($enumProvider, $redirectUri, $state);
 
         if (method_exists($driver, 'forState')) {
             $driver->forState($state);
@@ -101,7 +101,11 @@ class SocialAuthController extends Controller
         }
 
         try {
-            $driver = $this->buildDriver($enumProvider, $request->input('redirect_uri'));
+            $driver = $this->buildDriver(
+                $enumProvider,
+                $request->input('redirect_uri'),
+                $request->input('state')
+            );
 
             if (method_exists($driver, 'forState')) {
                 $driver->forState($request->input('state'));

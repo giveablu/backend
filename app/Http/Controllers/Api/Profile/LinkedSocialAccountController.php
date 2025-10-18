@@ -37,8 +37,6 @@ class LinkedSocialAccountController extends Controller
             ], 422);
         }
 
-        $driver = $this->buildDriver($enumProvider, $request->input('redirect_uri'));
-
         $state = $this->stateManager->generateState(
             $enumProvider,
             'link',
@@ -48,6 +46,8 @@ class LinkedSocialAccountController extends Controller
                 'redirect_uri' => $request->input('redirect_uri'),
             ]
         );
+
+        $driver = $this->buildDriver($enumProvider, $request->input('redirect_uri'), $state);
 
         if (method_exists($driver, 'forState')) {
             $driver->forState($state);
@@ -108,7 +108,11 @@ class LinkedSocialAccountController extends Controller
         }
 
         try {
-            $driver = $this->buildDriver($enumProvider, $request->input('redirect_uri'));
+            $driver = $this->buildDriver(
+                $enumProvider,
+                $request->input('redirect_uri'),
+                $request->input('state')
+            );
 
             if (method_exists($driver, 'forState')) {
                 $driver->forState($request->input('state'));

@@ -8,12 +8,18 @@ use Laravel\Socialite\Facades\Socialite;
 
 trait InteractsWithSocialProviders
 {
-    protected function buildDriver(SocialProvider $provider, ?string $redirectUri): Provider
+    protected function buildDriver(SocialProvider $provider, ?string $redirectUri, ?string $state = null): Provider
     {
         $driverName = $this->driverName($provider);
 
-        if ($provider === SocialProvider::X && $redirectUri) {
-            config(['services.twitter.redirect' => $redirectUri]);
+        $effectiveRedirect = $redirectUri;
+
+        if ($provider === SocialProvider::X && $redirectUri && $state) {
+            $effectiveRedirect = $this->mergeQueryParameters($redirectUri, ['state' => $state]);
+        }
+
+        if ($provider === SocialProvider::X && $effectiveRedirect) {
+            config(['services.twitter.redirect' => $effectiveRedirect]);
         }
 
         $driver = Socialite::driver($driverName);
@@ -34,8 +40,8 @@ trait InteractsWithSocialProviders
             $driver->usingGraphVersion($graphVersion);
         }
 
-        if ($redirectUri && $provider !== SocialProvider::X && method_exists($driver, 'redirectUrl')) {
-            $driver->redirectUrl($redirectUri);
+        if ($effectiveRedirect && $provider !== SocialProvider::X && method_exists($driver, 'redirectUrl')) {
+            $driver->redirectUrl($effectiveRedirect);
         }
 
         $scopes = $this->scopesForProvider($provider);
@@ -49,6 +55,70 @@ trait InteractsWithSocialProviders
         }
 
         return $driver->stateless();
+    }
+
+    private function mergeQueryParameters(string $url, array $parameters): string
+    {
+        $fragment = '';
+
+        $hashPosition = strpos($url, '#');
+        if ($hashPosition !== false) {
+            $fragment = substr($url, $hashPosition);
+            $url = substr($url, 0, $hashPosition);
+        }
+
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            $separator = str_contains($url, '?') ? '&' : '?';
+
+            return $url . $separator . http_build_query($parameters) . $fragment;
+        }
+
+        $query = [];
+
+        if (isset($parts['query']) && $parts['query'] !== '') {
+            parse_str($parts['query'], $query);
+        }
+
+        foreach ($parameters as $key => $value) {
+            if ($value === null) {
+                unset($query[$key]);
+            } else {
+                $query[$key] = $value;
+            }
+        }
+
+        $parts['query'] = http_build_query($query);
+
+        $rebuilt = $this->unparseUrl($parts);
+
+        return $rebuilt . $fragment;
+    }
+
+    private function unparseUrl(array $parts): string
+    {
+        $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+        $host = $parts['host'] ?? '';
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        $userInfo = '';
+        if (isset($parts['user'])) {
+            $userInfo = $parts['user'];
+        }
+
+        if (isset($parts['pass'])) {
+            $userInfo .= ':' . $parts['pass'];
+        }
+
+        if ($userInfo !== '') {
+            $userInfo .= '@';
+        }
+
+        $path = $parts['path'] ?? '';
+        $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
+
+        return $scheme . $userInfo . $host . $port . $path . $query;
     }
 
     protected function resolveProviderForRole(string $provider, ?string $role): SocialProvider
