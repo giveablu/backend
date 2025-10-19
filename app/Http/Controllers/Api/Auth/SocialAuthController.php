@@ -47,6 +47,14 @@ class SocialAuthController extends Controller
         $redirectResponse = $driver->with(['state' => $state])->redirect();
         $url = $redirectResponse->getTargetUrl();
 
+        Log::debug('Social redirect generated', [
+            'provider' => $enumProvider->value,
+            'role' => $role,
+            'state_hash' => $this->summarizeState($state),
+            'redirect_uri' => $redirectUri,
+            'authorization_url' => $url,
+        ]);
+
         return response()->json([
             'response' => true,
             'message' => 'Authorization URL generated',
@@ -61,6 +69,16 @@ class SocialAuthController extends Controller
     {
         $this->validateRole($role);
         $enumProvider = $this->resolveProviderForRole($provider, $role);
+
+        Log::debug('Social callback received', [
+            'provider' => $enumProvider->value,
+            'role' => $role,
+            'state_hash' => $this->summarizeState($request->input('state')),
+            'has_code' => $request->filled('code'),
+            'has_oauth_token' => $request->filled('oauth_token'),
+            'has_oauth_verifier' => $request->filled('oauth_verifier'),
+            'redirect_uri' => $request->input('redirect_uri'),
+        ]);
 
         $rules = [
             'state' => ['required', 'string'],
@@ -78,6 +96,13 @@ class SocialAuthController extends Controller
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
+            Log::warning('Social callback validation failed', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+                'errors' => $validator->errors()->toArray(),
+            ]);
+
             return response()->json([
                 'response' => false,
                 'message' => $validator->errors()->all(),
@@ -86,7 +111,23 @@ class SocialAuthController extends Controller
 
         $payload = $this->stateManager->resolve($request->input('state'));
 
+        Log::debug('Social callback state resolved', [
+            'provider' => $enumProvider->value,
+            'role' => $role,
+            'state_hash' => $this->summarizeState($request->input('state')),
+            'payload_provider' => $payload['provider'] ?? null,
+            'payload_role' => $payload['role'] ?? null,
+            'payload_present' => (bool) $payload,
+        ]);
+
         if (! $payload || ($payload['provider'] ?? null) !== $enumProvider->value) {
+            Log::warning('Social callback state mismatch', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+                'payload_provider' => $payload['provider'] ?? null,
+            ]);
+
             return response()->json([
                 'response' => false,
                 'message' => ['Invalid or expired state token.'],
@@ -94,6 +135,13 @@ class SocialAuthController extends Controller
         }
 
         if (($payload['role'] ?? null) !== $role) {
+            Log::warning('Social callback role mismatch', [
+                'provider' => $enumProvider->value,
+                'expected_role' => $role,
+                'payload_role' => $payload['role'] ?? null,
+                'state_hash' => $this->summarizeState($request->input('state')),
+            ]);
+
             return response()->json([
                 'response' => false,
                 'message' => ['Role mismatch for state token.'],
@@ -118,7 +166,21 @@ class SocialAuthController extends Controller
                 ]);
             }
 
+            Log::debug('Social callback invoking provider user fetch', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+            ]);
+
             $oauthUser = $driver->user();
+
+            Log::debug('Social callback provider user retrieved', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+                'provider_user_id' => $oauthUser->getId(),
+                'nickname' => $oauthUser->getNickname(),
+            ]);
 
             $result = $this->accountService->handleAuthentication(
                 $enumProvider,
@@ -127,10 +189,19 @@ class SocialAuthController extends Controller
                 linkUser: null,
                 deviceToken: $request->input('device_token')
             );
+
+            Log::debug('Social authentication completed', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+                'user_id' => $result['user']->id,
+                'warnings_count' => count($result['warnings']),
+            ]);
         } catch (\Throwable $exception) {
             Log::error('Social login failed', [
                 'provider' => $enumProvider->value,
                 'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
                 'exception' => $exception->getMessage(),
             ]);
 
@@ -139,6 +210,11 @@ class SocialAuthController extends Controller
                 'message' => ['Unable to complete social authentication.'],
             ], 400);
         } finally {
+            Log::debug('Social callback state cleanup', [
+                'provider' => $enumProvider->value,
+                'role' => $role,
+                'state_hash' => $this->summarizeState($request->input('state')),
+            ]);
             $this->stateManager->forget($request->input('state'));
         }
 
@@ -160,5 +236,14 @@ class SocialAuthController extends Controller
         if (! in_array($role, ['donor', 'receiver'], true)) {
             abort(404);
         }
+    }
+
+    private function summarizeState(?string $state): ?string
+    {
+        if (! $state) {
+            return null;
+        }
+
+        return substr(hash('sha256', $state), 0, 12);
     }
 }

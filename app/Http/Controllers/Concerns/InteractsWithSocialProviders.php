@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Enums\SocialProvider;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Log;
 
 trait InteractsWithSocialProviders
 {
@@ -18,6 +19,14 @@ trait InteractsWithSocialProviders
             $effectiveRedirect = $this->mergeQueryParameters($redirectUri, ['state' => $state]);
         }
 
+        Log::debug('Preparing socialite driver', [
+            'provider' => $provider->value,
+            'driver' => $driverName,
+            'requested_redirect' => $redirectUri,
+            'effective_redirect' => $effectiveRedirect,
+            'state_hash' => $state ? substr(hash('sha256', $state), 0, 12) : null,
+        ]);
+
         if ($provider === SocialProvider::X && $effectiveRedirect) {
             config(['services.twitter.redirect' => $effectiveRedirect]);
         }
@@ -26,6 +35,7 @@ trait InteractsWithSocialProviders
 
         if ($provider === SocialProvider::X) {
             if (method_exists($driver, 'usingStateManager')) {
+              
                 $driver->usingStateManager($this->stateManager);
             }
         }
@@ -53,6 +63,14 @@ trait InteractsWithSocialProviders
         if ($with) {
             $driver->with($with);
         }
+
+        Log::debug('Socialite driver configured', [
+            'provider' => $provider->value,
+            'driver' => $driverName,
+            'scopes' => $scopes,
+            'with_parameters' => $with,
+            'graph_version' => $graphVersion,
+        ]);
 
         return $driver->stateless();
     }
