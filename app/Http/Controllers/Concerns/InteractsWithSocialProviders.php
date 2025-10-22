@@ -148,8 +148,8 @@ trait InteractsWithSocialProviders
         }
 
         $allowed = match ($role) {
-            'receiver' => [SocialProvider::Facebook, SocialProvider::Instagram, SocialProvider::X],
-            'donor' => [SocialProvider::Facebook, SocialProvider::Instagram, SocialProvider::X, SocialProvider::Google],
+            'receiver' => [SocialProvider::Facebook, SocialProvider::X],
+            'donor' => [SocialProvider::Facebook, SocialProvider::X, SocialProvider::Google],
             default => [],
         };
 
