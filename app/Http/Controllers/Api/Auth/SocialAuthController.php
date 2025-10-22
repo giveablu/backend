@@ -228,7 +228,7 @@ class SocialAuthController extends Controller
             'meta' => [
                 'access_token' => $token,
             ],
-        ]);
+        ])->toResponse($request);
     }
 
     private function validateRole(string $role): void
