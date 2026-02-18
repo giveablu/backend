@@ -1,5 +1,19 @@
 <?php
 
+$allowedOrigins = array_values(array_filter(array_map(
+    static fn ($origin) => trim($origin),
+    explode(',', (string) env('CORS_ALLOWED_ORIGINS', '*'))
+)));
+
+if (empty($allowedOrigins)) {
+    $allowedOrigins = ['*'];
+}
+
+$allowedOriginsPatterns = array_values(array_filter(array_map(
+    static fn ($pattern) => trim($pattern),
+    explode(',', (string) env('CORS_ALLOWED_ORIGINS_PATTERNS', ''))
+)));
+
 return [
 
     /*
@@ -19,9 +33,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => $allowedOrigins,
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => $allowedOriginsPatterns,
 
     'allowed_headers' => ['*'],
 
@@ -29,6 +43,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => filter_var(env('CORS_SUPPORTS_CREDENTIALS', false), FILTER_VALIDATE_BOOL),
 
 ];
