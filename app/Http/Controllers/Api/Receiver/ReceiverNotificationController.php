@@ -12,7 +12,7 @@ class ReceiverNotificationController extends Controller
     public function list(Request $request)
     {
         return NotificationResource::collection($request->user()->unreadNotifications)->additional([
-            'receiver_balance' => (int)$request->user()->post->paid,
+            'receiver_balance' => (int) ($request->user()->post?->paid ?? 0),
             'response' => true,
             'message' => ['Receiver Notification']
         ]);
